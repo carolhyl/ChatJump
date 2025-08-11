@@ -19,7 +19,7 @@
     ],
     "web_accessible_resources": [
       {
-        "resources": ["src/main.js", "src/ChatJump.vue", "src/style.css", "src/main.css"],
+        "resources": ["src/main.js", "src/ChatJump.vue", "src/style.css"],
         "matches": [
           "https://chat.openai.com/*",
           "https://chatgpt.com/*"
