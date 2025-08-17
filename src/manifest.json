@@ -17,6 +17,10 @@
         "run_at": "document_idle"
       }
     ],
+    "action": {
+      "default_popup": "popup.html",
+      "default_title": "ChatJump"
+    },
     "web_accessible_resources": [
       {
         "resources": ["src/main.js", "src/ChatJump.vue", "src/style.css"],

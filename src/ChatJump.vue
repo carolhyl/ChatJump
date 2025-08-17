@@ -8,84 +8,85 @@
       v-if="!showQuestionList"
       class="chat-jump-navigator"
     >
-    <div class="chat-jump-nav-items">
-      <div class="chat-jump-collapsed-info">
-        <div class="chat-jump-question-count">{{ questions.length }}</div>
-        <div class="chat-jump-count-label">個問題</div>
-      </div>
+      <div class="chat-jump-nav-items">
+        <div class="chat-jump-collapsed-info">
+          <div class="chat-jump-question-count">{{ questions.length }}</div>
+          <div class="chat-jump-count-label">個問題</div>
+        </div>
       
-      <div class="chat-jump-indicators">
-        <div 
-          class="chat-jump-indicators-container"
-          @mouseenter="handleIndicatorHover"
-          @mouseleave="showAllQuestions = false"
-        >
+        <div class="chat-jump-indicators">
           <div 
-            v-if="visibleStartIndex > 0 && !showAllQuestions"
-            class="chat-jump-ellipsis-top"
+            class="chat-jump-indicators-container"
+            @mouseenter="handleIndicatorHover"
+            @mouseleave="showAllQuestions = false"
           >
-            <div class="chat-jump-ellipsis-dots">⋯</div>
-            <div class="chat-jump-ellipsis-count">{{ visibleStartIndex }}</div>
-          </div>
+            <div 
+              v-if="visibleStartIndex > 0 && !showAllQuestions"
+              class="chat-jump-ellipsis-top"
+            >
+              <div class="chat-jump-ellipsis-dots">⋯</div>
+              <div class="chat-jump-ellipsis-count">{{ visibleStartIndex }}</div>
+            </div>
           
-          <div 
-            v-for="(question, index) in (showAllQuestions ? questions : visibleQuestions)" 
-            :key="showAllQuestions ? index : (visibleStartIndex + index)"
-            class="chat-jump-nav-item"
-          >
-            <div class="chat-jump-nav-icon">
-              <div 
-                class="chat-jump-dash-icon"
-                :class="{ 'active': activeQuestionIndex === (showAllQuestions ? index : (visibleStartIndex + index)) }"
-              ></div>
+            <div 
+              v-for="(question, index) in (showAllQuestions ? questions : visibleQuestions)" 
+              :key="showAllQuestions ? index : (visibleStartIndex + index)"
+              class="chat-jump-nav-item"
+            >
+              <div class="chat-jump-nav-icon">
+                <div 
+                  class="chat-jump-dash-icon"
+                  :class="{ 'active': activeQuestionIndex === (showAllQuestions ? index : (visibleStartIndex + index)) }"
+                />
+              </div>
             </div>
           </div>
-        </div>
         
-        <div 
-          v-if="visibleQuestions.length === 0 && questions.length > 0"
-          v-for="(question, index) in questions" 
-          :key="'fallback-' + index"
-          class="chat-jump-nav-item"
-        >
-          <div class="chat-jump-nav-icon">
+          <template v-if="visibleQuestions.length === 0 && questions.length > 0">
             <div 
-              class="chat-jump-dash-icon"
-              :class="{ 'active': activeQuestionIndex === index }"
-            ></div>
-          </div>
+              v-for="(question, index) in questions.slice(visibleStartIndex, visibleEndIndex + 1)" 
+              :key="'fallback-' + index"
+              class="chat-jump-nav-item"
+            >
+              <div class="chat-jump-nav-icon">
+                <div 
+                  class="chat-jump-dash-icon"
+                  :class="{ 'active': activeQuestionIndex === index }"
+                />
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </div>
-    </div>
+  </div>
 
+  <div 
+    v-if="showQuestionList && questions.length > 0"
+    class="chat-jump-question-list-expanded"
+  >
     <div 
-      v-if="showQuestionList && questions.length > 0"
-      class="chat-jump-question-list-expanded"
+      v-for="(question, index) in questions" 
+      :key="index"
+      :class="['chat-jump-question-item', { 'chat-jump-question-item-hovered': hoveredQuestionIndex === index }]"
+      @mouseenter="hoveredQuestionIndex = index"
+      @mouseleave="hoveredQuestionIndex = -1"
+      @click="scrollToQuestion(question.element)"
     >
-      <div 
-        v-for="(question, index) in questions" 
-        :key="index"
-        :class="['chat-jump-question-item', { 'chat-jump-question-item-hovered': hoveredQuestionIndex === index }]"
-        @mouseenter="hoveredQuestionIndex = index"
-        @mouseleave="hoveredQuestionIndex = -1"
-        @click="scrollToQuestion(question.element)"
-      >
-        <div class="chat-jump-question-content">
-          <div class="chat-jump-question-number-badge">{{ index + 1 }}</div>
-          <div class="chat-jump-question-text">
-            {{ truncateText(question.text, 120) }}
-          </div>
+      <div class="chat-jump-question-content">
+        <div class="chat-jump-question-number-badge">{{ index + 1 }}</div>
+        <div class="chat-jump-question-text">
+          {{ truncateText(question.text, 120) }}
         </div>
       </div>
     </div>
+  </div>
     
-    <div 
-      v-if="questions.length === 0" 
-      class="chat-jump-no-questions"
-    >
-      <div class="chat-jump-loading">正在搜尋問題...</div>
-    </div>
+  <div 
+    v-if="questions.length === 0" 
+    class="chat-jump-no-questions"
+  >
+    <div class="chat-jump-loading">正在搜尋問題...</div>
   </div>
 </template>
 
@@ -155,7 +156,9 @@ const visibleQuestions = computed(() => {
 })
 
 const truncateText = (text, maxLength) => {
-  if (text.length <= maxLength) return text
+  if (text.length <= maxLength) {
+    return text
+  }
   return text.substring(0, maxLength) + '...'
 }
 
@@ -252,7 +255,7 @@ const extractUserQuestions = () => {
     'article[data-testid*="conversation-turn"][data-turn="user"]',
     '[data-message-author-role="user"]',
     'div[data-message-author-role="user"]',
-    '.group[data-testid*="conversation-turn"]:has([data-message-author-role="user"])',
+    '.group[data-testid*="conversation-turn"]:has([data-message-author-role="user"])'
   ]
   
   const foundQuestions = []
@@ -261,7 +264,7 @@ const extractUserQuestions = () => {
     try {
       const elements = document.querySelectorAll(selector)
       
-      elements.forEach((element, index) => {
+      elements.forEach((element, _index) => {
         let questionText = ''
         
         const preWrapContainer = element.querySelector('.whitespace-pre-wrap')
@@ -319,8 +322,8 @@ const extractUserQuestions = () => {
           
         }
       })
-    } catch (error) {
-      console.log(`選擇器 "${selector}" 執行時出錯:`, error)
+    } catch {
+      // console.log(`選擇器 "${selector}" 執行時出錯`)
     }
   })
   
@@ -376,7 +379,7 @@ onMounted(() => {
       intersectionObserver.disconnect()
     }
     
-    intersectionObserver = new IntersectionObserver((entries) => {
+    intersectionObserver = new IntersectionObserver((_entries) => {
       detectActiveQuestion()
     }, {
       root: null,
@@ -395,7 +398,9 @@ onMounted(() => {
   const directScrollHandler = () => {
     detectActiveQuestion()
     
-    if (scrollTimeout) clearTimeout(scrollTimeout)
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout)
+    }
     scrollTimeout = setTimeout(() => {
       detectActiveQuestion()
     }, 100)

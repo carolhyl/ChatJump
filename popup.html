@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatJump</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+  <div id="popup-app">
+    <div class="popup-card">
+      <div class="card-header">
+        <div class="card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <h2 class="card-title">ChatJump</h2>
+      </div>
+
+      <div class="card-content">
+        <div class="feature-item">
+          <div class="feature-icon">🚀</div>
+          <div class="feature-text">
+            <h3>快速導航</h3>
+            <p>在 ChatGPT 對話中快速跳轉到不同問題</p>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">📍</div>
+          <div class="feature-text">
+            <h3>問題定位</h3>
+            <p>清楚標記每個問題的位置和狀態</p>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-text">
+            <h3>即時更新</h3>
+            <p>自動追蹤對話進度和新問題</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button id="open-chatgpt" class="primary-button">
+          開啟 ChatGPT
+        </button>
+        <button id="settings" class="secondary-button">
+          設定
+        </button>
+      </div>
+
+      <div class="card-footer">
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span class="status-text">準備就緒</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>

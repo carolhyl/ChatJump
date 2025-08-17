@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import ChatJump from './ChatJump.vue'
 
 const mount = () => {
-    const root = document.createElement('div')
+  const root = document.createElement('div')
   root.id = 'chat-jump-root'
   if (document.body) {
     document.body.appendChild(root)    
