@@ -1,33 +1,39 @@
 {
-    "manifest_version": 3,
-    "name": "ChatJump",
-    "version": "1.0",
-    "description": "Sidebar for navigating ChatGPT replies",
-    "host_permissions": [
-      "https://chat.openai.com/*",
-      "https://chatgpt.com/*"
-    ],
-    "content_scripts": [
-      {
-        "matches": [
-          "https://chat.openai.com/*",
-          "https://chatgpt.com/*"
-        ],
-        "js": ["src/content-script.js"],
-        "run_at": "document_idle"
-      }
-    ],
-    "action": {
-      "default_popup": "popup.html",
-      "default_title": "ChatJump"
-    },
-    "web_accessible_resources": [
-      {
-        "resources": ["src/main.js", "src/ChatJump.vue", "src/style.css"],
-        "matches": [
-          "https://chat.openai.com/*",
-          "https://chatgpt.com/*"
-        ]
-      }
-    ]
-  }
+  "manifest_version": 3,
+  "name": "ChatJump",
+  "version": "1.0",
+  "description": "Sidebar for navigating ChatGPT replies",
+  "host_permissions": [
+    "https://chat.openai.com/*",
+    "https://chatgpt.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "src/content-script.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ChatJump"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/main.js",
+        "src/ChatJump.vue",
+        "src/style.css"
+      ],
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*"
+      ]
+    }
+  ]
+}

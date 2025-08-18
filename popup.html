@@ -10,63 +10,60 @@
 
 <body>
   <div id="popup-app">
-    <div class="popup-card">
-      <div class="card-header">
-        <div class="card-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-          </svg>
-        </div>
-        <h2 class="card-title">ChatJump</h2>
-      </div>
-
-      <div class="card-content">
-        <div class="feature-item">
-          <div class="feature-icon">🚀</div>
-          <div class="feature-text">
-            <h3>快速導航</h3>
-            <p>在 ChatGPT 對話中快速跳轉到不同問題</p>
+    <div class="popup-container">
+      <div class="header">
+        <div class="logo-section">
+          <div class="logo-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-svg">
+              <path d="M21.8935 1C27.1908 1 31.5347 5.03077 31.9627 10.1598H32V28.0633C31.9998 31.3936 29.4722 31.8089 26.5251 29.7272C24.6182 28.3811 20.9321 27.7622 18.4038 27.6473H10.1044C4.52383 27.6469 0 23.172 0 17.6535V10.9917C0.00037837 5.47361 4.52406 1.00038 10.1044 1H21.8935Z" fill="url(#chatjump-gradient)"/>
+              <defs>
+                <linearGradient id="chatjump-gradient" x1="24.4031" y1="25.1309" x2="7.68258" y2="0.824196" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#ED8742"/>
+                  <stop offset="1" stop-color="#FDBD6F"/>
+                </linearGradient>
+              </defs>
+            </svg>
           </div>
+          <h1 class="logo-text">ChatJump</h1>
         </div>
-
-        <div class="feature-item">
-          <div class="feature-icon">📍</div>
-          <div class="feature-text">
-            <h3>問題定位</h3>
-            <p>清楚標記每個問題的位置和狀態</p>
-          </div>
-        </div>
-
-        <div class="feature-item">
-          <div class="feature-icon">⚡</div>
-          <div class="feature-text">
-            <h3>即時更新</h3>
-            <p>自動追蹤對話進度和新問題</p>
-          </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="extension-toggle" checked>
+          <label for="extension-toggle" class="toggle-label"></label>
         </div>
       </div>
 
-      <div class="card-actions">
-        <button id="open-chatgpt" class="primary-button">
-          開啟 ChatGPT
-        </button>
-        <button id="settings" class="secondary-button">
-          設定
-        </button>
+      <!-- Description -->
+      <div class="description">
+        <p>Navigate ChatGPT conversations with ease</p>
       </div>
 
-      <div class="card-footer">
+      <!-- Status -->
+      <div class="status-section">
         <div class="status-indicator">
           <div class="status-dot"></div>
-          <span class="status-text">準備就緒</span>
+          <span class="status-text">Checking status...</span>
         </div>
+      </div>
+
+      <!-- Support section -->
+      <div class="support-section">
+        <div class="support-text">
+          <span class="emoji">😊</span> Love ChatJump? Fuel us with coffee!
+        </div>
+        <button class="coffee-button">
+          Buy Us a Coffee
+        </button>
+      </div>
+
+      <!-- Footer stats -->
+      <div class="footer-stats">
+        <span class="stat-left">14 Titles Generated</span>
+        <span class="stat-right">V1.0.0</span>
       </div>
     </div>
   </div>
 
-  <script src="popup.js"></script>
+
 </body>
 
 </html>

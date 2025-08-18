@@ -1,5 +1,6 @@
 {
   "extends": ["stylelint-config-standard"],
+  "customSyntax": "postcss-less",
   "ignoreFiles": ["dist/**/*", "node_modules/**/*"],
   "rules": {
     "color-named": null,
@@ -18,6 +19,8 @@
     "property-no-vendor-prefix": null,
     "value-no-vendor-prefix": null,
     "font-family-no-missing-generic-family-keyword": null,
-    "no-descending-specificity": null
+    "no-descending-specificity": null,
+    "declaration-property-value-no-unknown": null,
+    "import-notation": null
   }
 }

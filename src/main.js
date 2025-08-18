@@ -1,11 +1,12 @@
 import { createApp } from 'vue'
 import ChatJump from './ChatJump.vue'
+import './style.less'
 
 const mount = () => {
   const root = document.createElement('div')
   root.id = 'chat-jump-root'
   if (document.body) {
-    document.body.appendChild(root)    
+    document.body.appendChild(root)
     const app = createApp(ChatJump)
     app.mount(root)
   } else {

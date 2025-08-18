@@ -59,12 +59,11 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <div 
-    v-if="showQuestionList && questions.length > 0"
-    class="chat-jump-question-list-expanded"
-  >
+    
+    <div 
+      v-if="showQuestionList && questions.length > 0"
+      class="chat-jump-question-list-expanded"
+    >
     <div 
       v-for="(question, index) in questions" 
       :key="index"
@@ -87,6 +86,7 @@
     class="chat-jump-no-questions"
   >
     <div class="chat-jump-loading">正在搜尋問題...</div>
+  </div>
   </div>
 </template>
 
@@ -117,7 +117,7 @@ const calculateSmartViewport = () => {
   const itemHeight = 25
   let maxVisibleItems = Math.floor(maxVisibleHeight / itemHeight)
   
-  maxVisibleItems = Math.min(maxVisibleItems, 8)
+  // maxVisibleItems = Math.min(maxVisibleItems, 8)
   
   if (questions.value.length <= maxVisibleItems) {
     visibleStartIndex.value = 0
@@ -241,7 +241,7 @@ const scrollToQuestion = (element) => {
     }, 1000)
     
     element.style.transition = 'background-color 0.5s ease'
-    element.style.backgroundColor = '#fff3cd'
+    element.style.backgroundColor = '#FAF3EC'
     setTimeout(() => {
       element.style.backgroundColor = ''
     }, 2000)
