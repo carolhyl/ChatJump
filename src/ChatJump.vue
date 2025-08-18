@@ -67,7 +67,7 @@
               @blur="saveEditingTitle"
               @click.stop
               ref="inlineInput"
-              maxlength="100"
+              maxlength="300"
             />
           </div>
           <div 
@@ -95,6 +95,15 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { 
+  ENABLE_ALL_CHATS, 
+  MAX_RECENT_CHATS, 
+  QUESTION_TITLE_MAX_LENGTH, 
+  AUTO_SAVE_DELAY,
+  CHAT_ROOM_URL_PATTERNS,
+  USER_MESSAGE_SELECTORS,
+  LANGUAGE_PATTERNS
+} from './constant/config.js'
 
 const questions = ref([])
 const savedQuestions = ref([])
@@ -111,7 +120,6 @@ let observer = null
 let scrollObserver = null
 let lastScrollY = 0
 let lastScrollTime = 0
-
 
 const getRecentChatRoomIds = () => {
   try {
@@ -132,7 +140,7 @@ const getRecentChatRoomIds = () => {
       }
     })
     
-    return recentChatRoomIds.slice(0, 3)
+    return recentChatRoomIds.slice(0, MAX_RECENT_CHATS)
   } catch (error) {
     console.error('獲取聊天室列表時出錯:', error)
     return []
@@ -142,6 +150,8 @@ const getRecentChatRoomIds = () => {
 const shouldShowNavigator = computed(() => {
   if (questions.value.length === 0) return false
   
+  if (ENABLE_ALL_CHATS) return true
+  
   const currentChatRoomId = questions.value[0]?.chatRoomId
   if (!currentChatRoomId) return false
   
@@ -149,10 +159,26 @@ const shouldShowNavigator = computed(() => {
   return recentChatRoomIds.includes(currentChatRoomId)
 })
 
-const truncateText = (text, maxLength) => {
-  if (text.length <= maxLength) {
-    return text
+const detectLanguage = (text) => {
+  for (const [lang, pattern] of Object.entries(LANGUAGE_PATTERNS)) {
+    if (pattern.test(text)) {
+      return lang
+    }
   }
+  return 'default'
+}
+
+const truncateText = (text, customMaxLength = null) => {
+  let maxLength
+  
+  if (customMaxLength !== null) {
+    maxLength = customMaxLength
+  } else {
+    const language = detectLanguage(text)
+    maxLength = QUESTION_TITLE_MAX_LENGTH[language] || QUESTION_TITLE_MAX_LENGTH.default
+  }
+  
+  if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
 }
 
@@ -179,25 +205,21 @@ const saveSavedQuestions = () => {
 const saveCurrentQuestion = (question) => {
   const questionToSave = {
     id: Date.now().toString(),
-    title: truncateText(question.text, 50),
+    title: truncateText(question.text),
     originalText: question.text,
     timestamp: new Date().toISOString(),
     url: window.location.href
   }
   
-  // 檢查是否已存在相同問題（只檢查原文）
   const existingIndex = savedQuestions.value.findIndex(q => 
     q.originalText === question.text
   )
   
   if (existingIndex !== -1) {
-    // 更新現有問題的時間戳，但保持編輯過的標題
     savedQuestions.value[existingIndex].timestamp = questionToSave.timestamp
     savedQuestions.value[existingIndex].url = questionToSave.url
   } else {
-    // 添加新問題
     savedQuestions.value.unshift(questionToSave)
-    
   }
   
   saveSavedQuestions()
@@ -206,7 +228,7 @@ const saveCurrentQuestion = (question) => {
 const updateQuestionTitle = (questionId, newTitle) => {
   const question = savedQuestions.value.find(q => q.id === questionId)
   if (question) {
-    question.title = newTitle.trim() || question.originalText.substring(0, 50) + '...'
+    question.title = newTitle.trim() || truncateText(question.originalText)
     saveSavedQuestions()
   }
 }
@@ -216,11 +238,11 @@ const getDisplayTitle = (question) => {
     q.originalText === question.text
   )
   
-  if (savedQuestion && savedQuestion.title !== truncateText(question.text, 50)) {
-    return savedQuestion.title
+  if (savedQuestion && savedQuestion.title !== truncateText(question.text)) {
+    return truncateText(savedQuestion.title)
   }
   
-  return truncateText(question.text, 120)
+  return truncateText(question.text)
 }
 
 const startEditingTitle = (questionId, currentTitle, questionIndex = -1) => {
@@ -245,7 +267,11 @@ const startEditingQuestionTitle = (question, questionIndex) => {
   )
   
   if (savedQuestion) {
-    startEditingTitle(savedQuestion.id, savedQuestion.title, questionIndex)
+    const defaultTitle = truncateText(question.text)
+    const titleToEdit = savedQuestion.title !== defaultTitle 
+      ? savedQuestion.title 
+      : question.text
+    startEditingTitle(savedQuestion.id, titleToEdit, questionIndex)
   } else {
     saveCurrentQuestion(question)
     nextTick(() => {
@@ -253,7 +279,7 @@ const startEditingQuestionTitle = (question, questionIndex) => {
         q.originalText === question.text
       )
       if (newSavedQuestion) {
-        startEditingTitle(newSavedQuestion.id, newSavedQuestion.title, questionIndex)
+        startEditingTitle(newSavedQuestion.id, question.text, questionIndex)
       }
     })
   }
@@ -293,7 +319,7 @@ const handleInlineInput = () => {
   
   autoSaveTimer = setTimeout(() => {
     saveEditingTitle()
-  }, 1000)
+  }, AUTO_SAVE_DELAY)
 }
 
 const detectActiveQuestion = () => {
@@ -375,27 +401,13 @@ const scrollToQuestion = (element) => {
 }
 
 const extractUserQuestions = () => {
-    const userSelectors = [
-    'article[data-testid*="conversation-turn"][data-turn="user"]',
-    '[data-message-author-role="user"]',
-    'div[data-message-author-role="user"]',
-    '.group[data-testid*="conversation-turn"]:has([data-message-author-role="user"])'
-  ]
   
   const foundQuestions = []
   
   const getCurrentChatRoomId = () => {
     const url = window.location.href
     
-    const patterns = [
-      /\/c\/([a-f0-9-]+)/,           // /c/chat-id
-      /\/chat\/([a-f0-9-]+)/,       // /chat/chat-id
-      /\/conversation\/([a-f0-9-]+)/, // /conversation/chat-id
-      /chatId=([a-f0-9-]+)/,        // ?chatId=chat-id
-      /id=([a-f0-9-]+)/             // ?id=chat-id
-    ]
-    
-    for (const pattern of patterns) {
+    for (const pattern of CHAT_ROOM_URL_PATTERNS) {
       const match = url.match(pattern)
       if (match && match[1]) {
         return match[1]
@@ -413,7 +425,7 @@ const extractUserQuestions = () => {
   
   const currentChatRoomId = getCurrentChatRoomId()
   
-  userSelectors.forEach(selector => {
+  USER_MESSAGE_SELECTORS.forEach(selector => {
     try {
       const elements = document.querySelectorAll(selector)
       
@@ -512,9 +524,7 @@ const extractUserQuestions = () => {
 }
 
 onMounted(() => {
-  // 載入儲存的問題
-  loadSavedQuestions()
-  
+  loadSavedQuestions()  
   extractUserQuestions()
   
   setTimeout(() => {
