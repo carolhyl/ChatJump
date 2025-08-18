@@ -1,5 +1,6 @@
 <template>
   <div 
+    v-if="shouldShowNavigator"
     class="chat-jump-navigator-container"
     @mouseenter="showQuestionList = true"
     @mouseleave="showQuestionList = false"
@@ -30,8 +31,6 @@
               </div>
             </div>
           </div>
-          
-
         </div>
       </div>
     </div>
@@ -114,6 +113,41 @@ let lastScrollY = 0
 let lastScrollTime = 0
 
 
+const getRecentChatRoomIds = () => {
+  try {
+    const chatLinks = document.querySelectorAll('a[href*="/c/"]')
+    const recentChatRoomIds = []
+    
+    Array.from(chatLinks).forEach(link => {
+      if (recentChatRoomIds.length >= 3) return
+      
+      const href = link.getAttribute('href') || link.href
+      const chatIdMatch = href.match(/\/c\/([a-f0-9-]+)/)
+      
+      if (chatIdMatch) {
+        const chatId = chatIdMatch[1]
+        if (!recentChatRoomIds.includes(chatId)) {
+          recentChatRoomIds.push(chatId)
+        }
+      }
+    })
+    
+    return recentChatRoomIds.slice(0, 3)
+  } catch (error) {
+    console.error('獲取聊天室列表時出錯:', error)
+    return []
+  }
+}
+
+const shouldShowNavigator = computed(() => {
+  if (questions.value.length === 0) return false
+  
+  const currentChatRoomId = questions.value[0]?.chatRoomId
+  if (!currentChatRoomId) return false
+  
+  const recentChatRoomIds = getRecentChatRoomIds()
+  return recentChatRoomIds.includes(currentChatRoomId)
+})
 
 const truncateText = (text, maxLength) => {
   if (text.length <= maxLength) {
@@ -122,7 +156,6 @@ const truncateText = (text, maxLength) => {
   return text.substring(0, maxLength) + '...'
 }
 
-// localStorage 相關功能
 const loadSavedQuestions = () => {
   try {
     const saved = localStorage.getItem('chatjump-saved-questions')
@@ -170,11 +203,6 @@ const saveCurrentQuestion = (question) => {
   saveSavedQuestions()
 }
 
-const removeSavedQuestion = (questionId) => {
-  savedQuestions.value = savedQuestions.value.filter(q => q.id !== questionId)
-  saveSavedQuestions()
-}
-
 const updateQuestionTitle = (questionId, newTitle) => {
   const question = savedQuestions.value.find(q => q.id === questionId)
   if (question) {
@@ -183,18 +211,15 @@ const updateQuestionTitle = (questionId, newTitle) => {
   }
 }
 
-// 獲取顯示標題（優先顯示編輯過的標題）
 const getDisplayTitle = (question) => {
   const savedQuestion = savedQuestions.value.find(q => 
     q.originalText === question.text
   )
   
   if (savedQuestion && savedQuestion.title !== truncateText(question.text, 50)) {
-    // 如果有儲存的問題且標題被編輯過，顯示編輯過的標題
     return savedQuestion.title
   }
   
-  // 否則顯示原始文字
   return truncateText(question.text, 120)
 }
 
@@ -203,7 +228,6 @@ const startEditingTitle = (questionId, currentTitle, questionIndex = -1) => {
   editingQuestionIndex.value = questionIndex
   editingTitle.value = currentTitle
   
-  // 使用 nextTick 確保 DOM 更新後再聚焦
   nextTick(() => {
     const input = document.querySelector('.chat-jump-inline-input')
     if (input) {
@@ -216,16 +240,13 @@ const startEditingTitle = (questionId, currentTitle, questionIndex = -1) => {
 
 
 const startEditingQuestionTitle = (question, questionIndex) => {
-  // 檢查是否已經有儲存的版本
   const savedQuestion = savedQuestions.value.find(q => 
     q.originalText === question.text
   )
   
   if (savedQuestion) {
-    // 編輯已儲存的問題
     startEditingTitle(savedQuestion.id, savedQuestion.title, questionIndex)
   } else {
-    // 創建新的儲存問題並編輯
     saveCurrentQuestion(question)
     nextTick(() => {
       const newSavedQuestion = savedQuestions.value.find(q => 
@@ -266,12 +287,10 @@ const handleInlineKeydown = (event) => {
 }
 
 const handleInlineInput = () => {
-  // 清除之前的計時器
   if (autoSaveTimer) {
     clearTimeout(autoSaveTimer)
   }
   
-  // 設置新的計時器，1秒後自動儲存
   autoSaveTimer = setTimeout(() => {
     saveEditingTitle()
   }, 1000)
@@ -300,10 +319,8 @@ const detectActiveQuestion = () => {
       
       // 計算元素中心點與視窗中心點的距離
       const distance = Math.abs(elementCenter - viewportCenter)
-      
       // 檢查元素是否在視窗內
       const isInViewport = rect.top < viewportHeight && rect.bottom > 0
-      
       // 快速滾動時放寬檢測範圍
       const isValidCandidate = scrollVelocity > 2 ? 
         (rect.top < viewportHeight * 1.2 && rect.bottom > -viewportHeight * 0.2) : 
@@ -367,6 +384,35 @@ const extractUserQuestions = () => {
   
   const foundQuestions = []
   
+  const getCurrentChatRoomId = () => {
+    const url = window.location.href
+    
+    const patterns = [
+      /\/c\/([a-f0-9-]+)/,           // /c/chat-id
+      /\/chat\/([a-f0-9-]+)/,       // /chat/chat-id
+      /\/conversation\/([a-f0-9-]+)/, // /conversation/chat-id
+      /chatId=([a-f0-9-]+)/,        // ?chatId=chat-id
+      /id=([a-f0-9-]+)/             // ?id=chat-id
+    ]
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern)
+      if (match && match[1]) {
+        return match[1]
+      }
+    }
+    
+    // 如果 URL 中沒有找到，使用 pathname 作為備用 ID
+    const pathname = window.location.pathname
+    if (pathname && pathname !== '/') {
+      return pathname.replace(/[^a-zA-Z0-9-]/g, '-').replace(/^-+|-+$/g, '')
+    }
+    
+    return 'default-chat'
+  }
+  
+  const currentChatRoomId = getCurrentChatRoomId()
+  
   userSelectors.forEach(selector => {
     try {
       const elements = document.querySelectorAll(selector)
@@ -424,7 +470,9 @@ const extractUserQuestions = () => {
             text: questionText,
             element: element,
             id: questionId,
-            index: foundQuestions.length
+            index: foundQuestions.length,
+            chatRoomId: currentChatRoomId,
+            timestamp: Date.now()
           })
           
         }

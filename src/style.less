@@ -188,22 +188,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     &:hover {
         opacity: 1;
         background: rgba(0, 0, 0, 0.05);
     }
-    
+
     svg {
         display: block;
         width: 10px;
         height: 12px;
-        
+
         path {
             transition: fill 0.2s ease;
         }
     }
-    
+
     &:hover svg path {
         fill: @primary-color;
     }
@@ -227,7 +227,7 @@
     word-break: break-word;
     margin: 0;
     padding: 0;
-    padding-right: 30px; /* 為編輯圖標預留空間 */
+    padding-right: 30px;
 }
 
 .chat-jump-inline-input {
@@ -244,7 +244,7 @@
     font-family: inherit;
     color: @text-primary;
     box-sizing: border-box;
-    
+
     &:focus {
         border-color: @primary-color;
         box-shadow: 0 0 0 2px rgba(237, 135, 66, 0.2);
