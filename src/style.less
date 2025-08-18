@@ -11,7 +11,6 @@
 
 .chat-jump-navigator {
     max-height: 50vh;
-    background: @bg-main;
     font-family: @font-family-primary;
     overflow: hidden;
 }
@@ -107,7 +106,7 @@
     display: flex;
     flex-direction: column;
     align-items: end;
-    min-height: 28px;
+    height: 14px;
     justify-content: center;
 }
 
@@ -171,6 +170,43 @@
     display: flex;
     align-items: flex-start;
     gap: 8px;
+    position: relative;
+}
+
+.chat-jump-edit-icon {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.05);
+    }
+    
+    svg {
+        display: block;
+        width: 10px;
+        height: 12px;
+        
+        path {
+            transition: fill 0.2s ease;
+        }
+    }
+    
+    &:hover svg path {
+        fill: @primary-color;
+    }
 }
 
 .chat-jump-question-number-badge {
@@ -191,6 +227,28 @@
     word-break: break-word;
     margin: 0;
     padding: 0;
+    padding-right: 30px; /* 為編輯圖標預留空間 */
+}
+
+.chat-jump-inline-input {
+    width: 100%;
+    background: @white;
+    border: 1px solid @primary-color;
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.4;
+    margin: 0;
+    outline: none;
+    font-family: inherit;
+    color: @text-primary;
+    box-sizing: border-box;
+    
+    &:focus {
+        border-color: @primary-color;
+        box-shadow: 0 0 0 2px rgba(237, 135, 66, 0.2);
+    }
 }
 
 .chat-jump-ellipsis-indicator {
