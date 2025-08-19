@@ -80,6 +80,16 @@
               <path d="M5.54549 0.0909081C5.68451 0.0910623 5.81823 0.144297 5.91932 0.239734C6.02042 0.335172 6.08125 0.46561 6.0894 0.604396C6.09755 0.743182 6.05239 0.879842 5.96316 0.986453C5.87393 1.09306 5.74736 1.16158 5.60931 1.178L5.54549 1.18182H1.18185V8.81818H8.81821V4.45454C8.81837 4.31552 8.8716 4.1818 8.96704 4.08071C9.06248 3.97961 9.19292 3.91878 9.3317 3.91063C9.47049 3.90248 9.60715 3.94764 9.71376 4.03687C9.82037 4.1261 9.88889 4.25267 9.9053 4.39073L9.90912 4.45454V8.81818C9.90921 9.0934 9.80527 9.35849 9.61812 9.5603C9.43098 9.7621 9.17448 9.88572 8.90003 9.90636L8.81821 9.90909H1.18185C0.906628 9.90918 0.641542 9.80523 0.439734 9.61809C0.237926 9.43095 0.114312 9.17445 0.0936698 8.9L0.0909424 8.81818V1.18182C0.0908553 0.906594 0.1948 0.641508 0.381941 0.4397C0.569081 0.237892 0.825585 0.114277 1.10003 0.0936354L1.18185 0.0909081H5.54549ZM8.95076 0.277999C9.04892 0.180173 9.18063 0.123377 9.31915 0.119147C9.45767 0.114917 9.5926 0.163571 9.69655 0.255226C9.80049 0.34688 9.86565 0.474663 9.8788 0.612621C9.89194 0.750579 9.85208 0.888367 9.76731 0.997999L9.72203 1.04982L4.32203 6.44927C4.22387 6.5471 4.09216 6.60389 3.95364 6.60812C3.81512 6.61235 3.68019 6.5637 3.57624 6.47204C3.4723 6.38039 3.40714 6.25261 3.394 6.11465C3.38086 5.97669 3.42072 5.8389 3.50549 5.72927L3.55076 5.678L8.95076 0.277999Z" fill="#9E9E9E"/>
             </svg>
           </div>
+          <div 
+            v-if="hoveredQuestionIndex === index && editingQuestionIndex !== index"
+            class="chat-jump-delete-icon"
+            @click.stop="deleteQuestion(question.id)"
+            title="刪除問題"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 1L11 11M1 11L11 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
         </div>
       </div>
     </div>
@@ -110,6 +120,7 @@ const savedQuestions = ref([])
 const showQuestionList = ref(false)
 const hoveredQuestionIndex = ref(-1)
 const activeQuestionIndex = ref(-1)
+const deletedQuestionIds = ref(new Set())
 
 const editingQuestionId = ref(null)
 const editingQuestionIndex = ref(-1)
@@ -187,6 +198,12 @@ const loadSavedQuestions = () => {
     const saved = localStorage.getItem('chatjump-saved-questions')
     if (saved) {
       savedQuestions.value = JSON.parse(saved)
+    }
+    
+    const deletedIds = localStorage.getItem('chatjump-deleted-questions')
+    if (deletedIds) {
+      const idsArray = JSON.parse(deletedIds)
+      deletedQuestionIds.value = new Set(idsArray)
     }
   } catch (error) {
     console.error('載入儲存問題時出錯:', error)
@@ -293,13 +310,31 @@ const saveEditingTitle = () => {
 }
 
 const cancelEditingTitle = () => {
+  editingQuestionId.value = null
+  editingQuestionIndex.value = -1
+  editingTitle.value = ''
+  
   if (autoSaveTimer) {
     clearTimeout(autoSaveTimer)
     autoSaveTimer = null
   }
-  editingQuestionId.value = null
-  editingQuestionIndex.value = -1
-  editingTitle.value = ''
+}
+
+const deleteQuestion = (questionId) => {
+  deletedQuestionIds.value.add(questionId)
+  
+  const updatedSavedQuestions = savedQuestions.value.filter(question => question.id !== questionId)
+  savedQuestions.value = updatedSavedQuestions
+  saveSavedQuestions()
+  
+
+  const questionIndex = questions.value.findIndex(question => question.id === questionId)
+  if (questionIndex !== -1) {
+    questions.value = questions.value.filter((_, index) => index !== questionIndex)
+  }
+  
+  // Save deleted IDs to localStorage for persistence
+  localStorage.setItem('chatjump-deleted-questions', JSON.stringify([...deletedQuestionIds.value]))
 }
 
 const handleInlineKeydown = (event) => {
@@ -499,7 +534,8 @@ const extractUserQuestions = () => {
   
   foundQuestions.forEach(q => {
     const normalizedText = q.text.toLowerCase().replace(/\s+/g, ' ').trim()
-    if (!seenTexts.has(normalizedText)) {
+    // Skip questions that have been deleted
+    if (!seenTexts.has(normalizedText) && !deletedQuestionIds.value.has(q.id)) {
       seenTexts.add(normalizedText)
       uniqueQuestions.push(q)
     }
@@ -620,3 +656,22 @@ onUnmounted(() => {
   }
 })
 </script>
+
+<style scoped>
+.chat-jump-delete-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  margin-left: 4px;
+  cursor: pointer;
+  color: #9E9E9E;
+}
+
+.chat-jump-delete-icon:hover {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: #F44336;
+}
+</style>

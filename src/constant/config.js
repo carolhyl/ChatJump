@@ -1,8 +1,9 @@
 export const ENABLE_ALL_CHATS = false
+export const ENABLE_DELETE_TITLE = true
 
 export const MAX_RECENT_CHATS = 3
 export const QUESTION_TITLE_MAX_LENGTH = {
-    'zh': 24,
+    'zh': 254,
     'ja': 32,
     'ko': 30,
     'en': 60,
