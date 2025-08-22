@@ -12,7 +12,6 @@
       <div class="chat-jump-nav-items">
         <div class="chat-jump-collapsed-info">
           <div class="chat-jump-question-count">{{ questions.length }}</div>
-          <div class="chat-jump-count-label">個問題</div>
         </div>
       
         <div class="chat-jump-indicators">
@@ -81,7 +80,7 @@
             </svg>
           </div>
           <div 
-            v-if="hoveredQuestionIndex === index && editingQuestionIndex !== index"
+            v-if="hoveredQuestionIndex === index && editingQuestionIndex !== index && ENABLE_DELETE_TITLE"
             class="chat-jump-delete-icon"
             @click.stop="deleteQuestion(question.id)"
             title="刪除問題"
@@ -106,7 +105,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { 
-  ENABLE_ALL_CHATS, 
+  ENABLE_ALL_CHATS,
+  ENABLE_DELETE_TITLE,
   MAX_RECENT_CHATS, 
   QUESTION_TITLE_MAX_LENGTH, 
   AUTO_SAVE_DELAY,
