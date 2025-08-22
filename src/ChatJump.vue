@@ -114,6 +114,11 @@ import {
   USER_MESSAGE_SELECTORS,
   LANGUAGE_PATTERNS
 } from './constant/config.js'
+import { 
+  debounce,
+  localStorageUtils,
+  recentChatIndicatorManager
+} from './utils/chatJumpUtils.js'
 
 const questions = ref([])
 const savedQuestions = ref([])
@@ -132,81 +137,6 @@ let scrollObserver = null
 let lastScrollY = 0
 let lastScrollTime = 0
 
-const getRecentChatRoomIds = () => {
-  try {
-    const savedRecentChats = localStorage.getItem('chatjump-recent-chats')
-    let recentChatsData = []
-    
-    if (savedRecentChats) {
-      try {
-        recentChatsData = JSON.parse(savedRecentChats)
-      } catch (e) {
-        recentChatsData = []
-      }
-    }
-    
-    const chatLinks = document.querySelectorAll('a[href*="/c/"]')
-    const currentChatRoomIds = []
-    const chatRoomInfo = new Map()
-    
-    Array.from(chatLinks).forEach(link => {
-      const href = link.getAttribute('href') || link.href
-      const chatIdMatch = href.match(/\/c\/([a-f0-9-]+)/)
-      
-      if (chatIdMatch) {
-        const chatId = chatIdMatch[1]
-        if (!currentChatRoomIds.includes(chatId)) {
-          currentChatRoomIds.push(chatId)
-          
-          let title = ''
-          const titleElement = link.querySelector('[title]') || 
-                              link.closest('[title]') || 
-                              link.parentElement?.querySelector('[title]')
-          if (titleElement) {
-            title = titleElement.getAttribute('title') || titleElement.textContent?.trim() || ''
-          }
-          
-          chatRoomInfo.set(chatId, {
-            id: chatId,
-            title: title,
-            href: href,
-            lastAccessed: Date.now()
-          })
-        }
-      }
-    })
-    
-    const updatedRecentChats = []
-    const seenIds = new Set()
-    
-    currentChatRoomIds.slice(0, MAX_RECENT_CHATS).forEach(chatId => {
-      if (!seenIds.has(chatId)) {
-        updatedRecentChats.push(chatRoomInfo.get(chatId))
-        seenIds.add(chatId)
-      }
-    })
-    
-    recentChatsData.forEach(chatData => {
-      if (updatedRecentChats.length >= MAX_RECENT_CHATS) return
-      if (!seenIds.has(chatData.id)) {
-        if (chatRoomInfo.has(chatData.id)) {
-          chatData.lastAccessed = Date.now()
-        }
-        updatedRecentChats.push(chatData)
-        seenIds.add(chatData.id)
-      }
-    })
-    
-    localStorage.setItem('chatjump-recent-chats', JSON.stringify(updatedRecentChats))
-    
-    const recentIds = updatedRecentChats.map(chat => chat.id)
-    
-    return recentIds
-  } catch (error) {
-    return []
-  }
-}
-
 const shouldShowNavigator = computed(() => {
   if (questions.value.length === 0) return false
   
@@ -216,7 +146,7 @@ const shouldShowNavigator = computed(() => {
   if (!currentChatRoomId) return false
   
   // 使用工具函數檢查當前聊天室是否在最近列表中
-  const recentChatIds = localStorageUtils.getRecentChatIds()
+  const recentChatIds = localStorageUtils.getRecentChatIds('chatjump-recent-chats')
   return recentChatIds.includes(currentChatRoomId)
 })
 
@@ -406,278 +336,21 @@ const handleInlineInput = () => {
   }, AUTO_SAVE_DELAY)
 }
 
-const debounce = (func, wait) => {
-  let timeout
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout)
-      func(...args)
-    }
-    clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
-  }
-}
-
-// localStorage 工具函數
-const localStorageUtils = {
-  // 獲取最近聊天室數據
-  getRecentChats() {
-    try {
-      const saved = localStorage.getItem('chatjump-recent-chats')
-      return saved ? JSON.parse(saved) : []
-    } catch (error) {
-      console.error('讀取最近聊天室數據失敗:', error)
-      return []
-    }
-  },
-
-  // 獲取最近聊天室 ID 列表
-  getRecentChatIds() {
-    return this.getRecentChats().map(chat => chat.id)
-  },
-
-  // 保存最近聊天室數據
-  saveRecentChats(chatsData) {
-    try {
-      localStorage.setItem('chatjump-recent-chats', JSON.stringify(chatsData))
-      return true
-    } catch (error) {
-      console.error('保存最近聊天室數據失敗:', error)
-      return false
-    }
-  },
-
-  // 移除指定聊天室
-  removeRecentChat(chatId) {
-    const recentChats = this.getRecentChats()
-    const filteredChats = recentChats.filter(chat => chat.id !== chatId)
-    return this.saveRecentChats(filteredChats)
-  },
-
-  // 自動填充最近聊天室（僅在 localStorage 為空時）
-  autoPopulateIfEmpty() {
-    const existingChats = this.getRecentChats()
-    
-    // 如果已經有聊天室記錄，不執行自動填充
-    if (existingChats.length > 0) {
-      return false
-    }
-
-    // 掃描當前頁面的聊天室
-    const chatLinks = document.querySelectorAll('a[href*="/c/"]')
-    const foundChats = []
-    
-    Array.from(chatLinks).forEach(link => {
-      if (foundChats.length >= MAX_RECENT_CHATS) return
-      
-      const href = link.getAttribute('href') || link.href
-      const chatId = domUtils.extractChatId(href)
-      
-      if (chatId && !foundChats.some(chat => chat.id === chatId)) {
-        // 嘗試獲取聊天室標題
-        let title = ''
-        const titleElement = link.querySelector('[title]') || 
-                            link.closest('[title]') || 
-                            link.parentElement?.querySelector('[title]') ||
-                            link.querySelector('[class*="truncate"]') ||
-                            link.querySelector('[class*="overflow-hidden"]')
-        
-        if (titleElement) {
-          title = titleElement.getAttribute('title') || 
-                  titleElement.textContent?.trim() || 
-                  `聊天室 ${chatId.substring(0, 8)}`
-        } else {
-          title = `聊天室 ${chatId.substring(0, 8)}`
-        }
-
-        foundChats.push({
-          id: chatId,
-          title: title,
-          href: href,
-          lastAccessed: Date.now()
-        })
-      }
-    })
-
-    // 如果找到聊天室，保存到 localStorage
-    if (foundChats.length > 0) {
-      this.saveRecentChats(foundChats)
-      console.log(`🚀 自動填充了 ${foundChats.length} 個最近聊天室`)
-      return true
-    }
-
-    return false
-  }
-}
-
-// DOM 操作工具函數
-const domUtils = {
-  // 聊天室選擇器配置
-  CHAT_SELECTORS: [
-    'a[href*="/c/"]',
-    '[data-testid*="conversation"]',
-    '.group.flex.cursor-pointer',
-    'li a[href*="/c/"]',
-    'nav a[href*="/c/"]',
-    '.sidebar a[href*="/c/"]',
-    '[class*="sidebar"] a[href*="/c/"]',
-  ],
-
-  // 查找聊天室元素
-  findChatElements() {
-    for (const selector of this.CHAT_SELECTORS) {
-      const items = document.querySelectorAll(selector)
-      if (items.length > 0) {
-        return Array.from(items)
-      }
-    }
-    return Array.from(document.querySelectorAll('a[href*="/c/"]'))
-  },
-
-  // 清理現有指示器
-  clearExistingIndicators() {
-    const existingIndicators = document.querySelectorAll('.chat-jump-recent-indicator')
-    existingIndicators.forEach(element => {
-      element.classList.remove('chat-jump-recent-indicator')
-      element.removeAttribute('data-chat-id')
-      if (element._chatJumpRemoveHandler) {
-        element.removeEventListener('click', element._chatJumpRemoveHandler, true)
-        delete element._chatJumpRemoveHandler
-      }
-    })
-    return existingIndicators.length
-  },
-
-  // 提取聊天室 ID
-  extractChatId(href) {
-    const chatIdMatch = href.match(/\/c\/([a-f0-9-]+)/)
-    return chatIdMatch ? chatIdMatch[1] : null
-  },
-
-  // 查找合適的父元素
-  findSuitableParent(element) {
-    let targetElement = element
-    const parentTypes = ['LI', 'group', 'flex', 'menuitem']
-    
-    for (const type of parentTypes) {
-      const parent = element.closest(type.toLowerCase()) || 
-                    element.closest(`[class*="${type}"]`)
-      if (parent) {
-        targetElement = parent
-        break
-      }
-    }
-    return targetElement
-  }
-}
-
-// 點擊事件處理工具函數
-const clickHandlerUtils = {
-  // 點擊檢測配置
-  DOT_OFFSET_FROM_TITLE: 30,
-  DOT_EXTEND_BEYOND_TITLE: 15,
-  FALLBACK_CLICK_THRESHOLD: 0.7,
-
-  // 創建點擊事件處理器
-  createRemoveClickHandler(chatId, targetElement) {
-    return (e) => {
-      const rect = targetElement.getBoundingClientRect()
-      const clickX = e.clientX - rect.left
-      const clickY = e.clientY - rect.top
-
-      // 找到標題元素
-      const titleElement = targetElement.querySelector('[class*="truncate"], [class*="overflow-hidden"]')
-      
-      if (titleElement) {
-        const titleRect = titleElement.getBoundingClientRect()
-        const titleWidth = titleRect.width
-        const dotStartX = titleWidth - this.DOT_OFFSET_FROM_TITLE
-        const dotEndX = titleWidth + this.DOT_EXTEND_BEYOND_TITLE
-        
-        // 主要檢測：點擊在小點點區域內
-        if (clickX >= dotStartX && clickX <= dotEndX) {
-          e.preventDefault()
-          e.stopPropagation()
-          removeRecentChat(chatId)
-          return false
-        }
-        
-        // 備用檢測：Shift + 點擊右側區域
-        if (clickX > rect.width * this.FALLBACK_CLICK_THRESHOLD && e.shiftKey) {
-          e.preventDefault()
-          e.stopPropagation()
-          removeRecentChat(chatId)
-          return false
-        }
-      }
-    }
-  },
-
-  // 添加點擊事件監聽器
-  attachClickHandler(targetElement, chatId) {
-    // 移除舊的事件監聽器
-    if (targetElement._chatJumpRemoveHandler) {
-      targetElement.removeEventListener('click', targetElement._chatJumpRemoveHandler, true)
-    }
-    
-    // 創建並添加新的事件監聽器
-    const handler = this.createRemoveClickHandler(chatId, targetElement)
-    targetElement._chatJumpRemoveHandler = handler
-    targetElement.addEventListener('click', handler, true)
-  }
-}
+// ==================== 本地函數 ====================
 
 // 從 localStorage 中移除指定的聊天室
 const removeRecentChat = (chatId) => {
-  try {
-    // 使用工具函數移除聊天室
-    const success = localStorageUtils.removeRecentChat(chatId)
-    
-    if (success) {
-      // 重新更新標示
-      setTimeout(() => {
-        addRecentChatIndicators()
-      }, 100)
-      
-      console.log(`已從最近聊天室中移除: ${chatId}`)
-    }
-  } catch (error) {
-    console.error('移除聊天室時出錯:', error)
-  }
+  recentChatIndicatorManager.removeChat(chatId, {
+    storageKey: 'chatjump-recent-chats',
+    removeCallback: removeRecentChat
+  })
 }
 
 const addRecentChatIndicators = () => {
-  try {
-    // 清理現有指示器
-    domUtils.clearExistingIndicators()
-    
-    // 獲取最近聊天室 IDs
-    const recentChatRoomIds = localStorageUtils.getRecentChatIds()
-    if (recentChatRoomIds.length === 0) return
-    
-    // 查找聊天室元素
-    const foundItems = domUtils.findChatElements()
-    
-    foundItems.forEach((item) => {
-      const href = item.getAttribute('href') || item.href
-      const chatId = domUtils.extractChatId(href)
-      
-      if (chatId && recentChatRoomIds.includes(chatId)) {
-        // 查找合適的父元素
-        const targetElement = domUtils.findSuitableParent(item)
-        
-        // 添加指示器樣式
-        targetElement.classList.add('chat-jump-recent-indicator')
-        targetElement.style.position = 'relative'
-        targetElement.setAttribute('data-chat-id', chatId)
-        
-        // 添加點擊事件處理器
-        clickHandlerUtils.attachClickHandler(targetElement, chatId)
-      }
-    })
-  } catch (error) {
-    console.error('添加最近聊天室標示時出錯:', error)
-  }
+  recentChatIndicatorManager.addIndicators({
+    storageKey: 'chatjump-recent-chats',
+    removeCallback: removeRecentChat
+  })
 }
 
 const detectActiveQuestion = () => {
@@ -847,8 +520,8 @@ const extractUserQuestions = () => {
           
         }
       })
-    } catch {
-      // console.log(`選擇器 "${selector}" 執行時出錯`)
+    } catch (error) {
+      console.error(`Error occurred while processing selector "${selector}":`, error)
     }
   })
   
@@ -891,7 +564,7 @@ onMounted(() => {
     detectActiveQuestion()
     
     // 如果 localStorage 為空，自動填充最近聊天室
-    const wasPopulated = localStorageUtils.autoPopulateIfEmpty()
+    const wasPopulated = localStorageUtils.autoPopulateIfEmpty(MAX_RECENT_CHATS, 'chatjump-recent-chats')
     
     // 添加最近聊天室標示
     addRecentChatIndicators()
@@ -901,10 +574,6 @@ onMounted(() => {
         const latestIndex = questions.value.length - 1
         activeQuestionIndex.value = latestIndex
       }
-      
-      // 再次確保標示已添加
-      addRecentChatIndicators()
-      
     }, 500)
   }, 1000)
   

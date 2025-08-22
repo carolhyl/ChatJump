@@ -32,3 +32,23 @@ export const LANGUAGE_PATTERNS = {
     ko: /[\uac00-\ud7af]/,           // 韓文字符範圍
     en: /^[a-zA-Z\s\d\W]+$/          // 英文字符範圍
 }
+
+export const CHAT_SELECTORS = [
+    'a[href*="/c/"]',
+    '[data-testid*="conversation"]',
+    '.group.flex.cursor-pointer',
+    'li a[href*="/c/"]',
+    'nav a[href*="/c/"]',
+    '.sidebar a[href*="/c/"]',
+    '[class*="sidebar"] a[href*="/c/"]',
+]
+
+export const CLICK_DETECTION_CONFIG = {
+    DOT_OFFSET_FROM_TITLE: 30,        // Offset from title right side (pixels)
+    DOT_EXTEND_BEYOND_TITLE: 15,      // Extension beyond title right side (pixels)
+    FALLBACK_CLICK_THRESHOLD: 0.7     // Fallback click detection right area ratio
+}
+
+export const DEFAULT_STORAGE_KEY = 'chatjump-recent-chats'
+export const DEFAULT_INDICATOR_CLASS = 'chat-jump-recent-indicator'
+export const DEFAULT_UPDATE_DELAY = 100
