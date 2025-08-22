@@ -126,6 +126,7 @@ const showQuestionList = ref(false)
 const hoveredQuestionIndex = ref(-1)
 const activeQuestionIndex = ref(-1)
 const deletedQuestionIds = ref(new Set())
+const recentChatIds = ref([])
 
 const editingQuestionId = ref(null)
 const editingQuestionIndex = ref(-1)
@@ -145,9 +146,8 @@ const shouldShowNavigator = computed(() => {
   const currentChatRoomId = questions.value[0]?.chatRoomId
   if (!currentChatRoomId) return false
   
-  // 使用工具函數檢查當前聊天室是否在最近列表中
-  const recentChatIds = localStorageUtils.getRecentChatIds('chatjump-recent-chats')
-  return recentChatIds.includes(currentChatRoomId)
+  // 使用響應式狀態檢查當前聊天室是否在最近列表中
+  return recentChatIds.value.includes(currentChatRoomId)
 })
 
 const detectLanguage = (text) => {
@@ -336,14 +336,22 @@ const handleInlineInput = () => {
   }, AUTO_SAVE_DELAY)
 }
 
-// ==================== 本地函數 ====================
+const syncRecentChatIds = () => {
+  const currentIds = localStorageUtils.getRecentChatIds('chatjump-recent-chats')
+  recentChatIds.value = currentIds
+}
 
-// 從 localStorage 中移除指定的聊天室
 const removeRecentChat = (chatId) => {
   recentChatIndicatorManager.removeChat(chatId, {
     storageKey: 'chatjump-recent-chats',
     removeCallback: removeRecentChat
   })
+  
+  syncRecentChatIds()
+  
+  setTimeout(() => {
+    syncRecentChatIds()
+  }, 150)
 }
 
 const addRecentChatIndicators = () => {
@@ -351,6 +359,8 @@ const addRecentChatIndicators = () => {
     storageKey: 'chatjump-recent-chats',
     removeCallback: removeRecentChat
   })
+  
+  syncRecentChatIds()
 }
 
 const detectActiveQuestion = () => {
@@ -563,10 +573,10 @@ onMounted(() => {
     setupIntersectionObserver()
     detectActiveQuestion()
     
-    // 如果 localStorage 為空，自動填充最近聊天室
-    const wasPopulated = localStorageUtils.autoPopulateIfEmpty(MAX_RECENT_CHATS, 'chatjump-recent-chats')
+    localStorageUtils.autoPopulateIfEmpty(MAX_RECENT_CHATS, 'chatjump-recent-chats')
     
-    // 添加最近聊天室標示
+    syncRecentChatIds()
+    
     addRecentChatIndicators()
     
     setTimeout(() => {      

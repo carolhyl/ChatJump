@@ -325,7 +325,8 @@ export const recentChatIndicatorManager = {
         indicatorClass = 'chat-jump-recent-indicator',
         customSelectors = null,
         config = CLICK_DETECTION_CONFIG,
-        updateDelay = 100
+        updateDelay = 100,
+        removeCallback = null
     } = {}) {
         try {
             const success = localStorageUtils.removeRecentChat(chatId, storageKey)
@@ -336,7 +337,7 @@ export const recentChatIndicatorManager = {
                         storageKey,
                         indicatorClass,
                         customSelectors,
-                        removeCallback: (id) => this.removeChat(id, { storageKey, indicatorClass, customSelectors, config }),
+                        removeCallback: removeCallback || ((id) => this.removeChat(id, { storageKey, indicatorClass, customSelectors, config, removeCallback })),
                         config
                     })
                 }, updateDelay)
