@@ -344,3 +344,56 @@ html.dark .chat-jump-recent-indicator [class*="overflow-hidden"]::after {
     background-color: @primary-color !important;
     box-shadow: 0 0 4px rgba(237, 135, 66, 0.3);
 }
+
+/* Add indicator styles for + icon */
+.chat-jump-add-indicator {
+    position: relative !important;
+}
+
+.chat-jump-add-indicator::after,
+.chat-jump-add-indicator *::after {
+    content: none !important;
+    display: none !important;
+}
+
+.chat-jump-add-indicator [class*="truncate"]::after,
+.chat-jump-add-indicator [class*="overflow-hidden"]::after {
+    content: '+' !important;
+    display: inline-block !important;
+    width: 14px;
+    height: 14px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 50%;
+    margin-left: 15px;
+    vertical-align: middle;
+    opacity: 0;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    z-index: 1001;
+    font-size: 10px;
+    line-height: 14px;
+    text-align: center;
+    font-weight: bold;
+    transform: scale(0.8);
+}
+
+.chat-jump-add-indicator:hover [class*="truncate"]::after,
+.chat-jump-add-indicator:hover [class*="overflow-hidden"]::after {
+    opacity: 1;
+    background-color: #45a049;
+    transform: scale(1);
+}
+
+/* Dark theme support for add indicator */
+[data-theme="dark"] .chat-jump-add-indicator [class*="truncate"]::after,
+.dark .chat-jump-add-indicator [class*="truncate"]::after,
+html.dark .chat-jump-add-indicator [class*="truncate"]::after,
+[data-theme="dark"] .chat-jump-add-indicator [class*="overflow-hidden"]::after,
+.dark .chat-jump-add-indicator [class*="overflow-hidden"]::after,
+html.dark .chat-jump-add-indicator [class*="overflow-hidden"]::after {
+    background-color: #4CAF50 !important;
+    box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
+}

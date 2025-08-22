@@ -51,4 +51,11 @@ export const CLICK_DETECTION_CONFIG = {
 
 export const DEFAULT_STORAGE_KEY = 'chatjump-recent-chats'
 export const DEFAULT_INDICATOR_CLASS = 'chat-jump-recent-indicator'
+export const DEFAULT_ADD_INDICATOR_CLASS = 'chat-jump-add-indicator'
 export const DEFAULT_UPDATE_DELAY = 100
+
+// Click detection configuration for add indicator
+export const ADD_CLICK_DETECTION_CONFIG = {
+    RIGHT_AREA_RATIO: 0.5,           // Right 50% of element for click detection
+    NAVIGATOR_ENABLE_DELAY: 200      // Delay before re-enabling navigator
+}

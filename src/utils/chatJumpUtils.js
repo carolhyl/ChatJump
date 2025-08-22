@@ -2,6 +2,9 @@ import {
     CHAT_SELECTORS,
     CLICK_DETECTION_CONFIG,
     DEFAULT_STORAGE_KEY,
+    DEFAULT_ADD_INDICATOR_CLASS,
+    MAX_RECENT_CHATS,
+    ADD_CLICK_DETECTION_CONFIG,
 } from '../constant/config.js'
 
 /**
@@ -76,6 +79,43 @@ export const localStorageUtils = {
         const recentChats = this.getRecentChats(storageKey)
         const filteredChats = recentChats.filter(chat => chat.id !== chatId)
         return this.saveRecentChats(filteredChats, storageKey)
+    },
+
+    /**
+     * Add chat room to recent chats
+     * @param {string} chatId - Chat room ID
+     * @param {string} title - Chat room title
+     * @param {string} href - Chat room URL
+     * @param {string} storageKey - localStorage key name
+     * @returns {boolean} Whether addition was successful
+     */
+    addRecentChat(chatId, title, href, storageKey = DEFAULT_STORAGE_KEY) {
+        try {
+            const recentChats = this.getRecentChats(storageKey)
+            
+            // Check if chat already exists
+            if (recentChats.some(chat => chat.id === chatId)) {
+                return false
+            }
+            
+            // Check if we've reached the maximum
+            if (recentChats.length >= MAX_RECENT_CHATS) {
+                return false
+            }
+            
+            const newChat = {
+                id: chatId,
+                title: title || `Chat ${chatId.substring(0, 8)}`,
+                href: href,
+                lastAccessed: new Date().toISOString()
+            }
+            
+            recentChats.unshift(newChat)
+            return this.saveRecentChats(recentChats, storageKey)
+        } catch (error) {
+            console.error('Failed to add recent chat:', error)
+            return false
+        }
     },
 
     /**
@@ -163,16 +203,48 @@ export const domUtils = {
      * @returns {number} Number of cleared indicators
      */
     clearExistingIndicators(indicatorClass = DEFAULT_INDICATOR_CLASS) {
-        const existingIndicators = document.querySelectorAll(`.${indicatorClass}`)
-        existingIndicators.forEach(element => {
-            element.classList.remove(indicatorClass)
-            element.removeAttribute('data-chat-id')
-            if (element._chatJumpRemoveHandler) {
-                element.removeEventListener('click', element._chatJumpRemoveHandler, true)
-                delete element._chatJumpRemoveHandler
-            }
-        })
-        return existingIndicators.length
+        try {
+            const existingIndicators = document.querySelectorAll(`.${indicatorClass}`)
+            existingIndicators.forEach(element => {
+                element.classList.remove(indicatorClass)
+                element.style.position = ''
+                element.removeAttribute('data-chat-id')
+                
+                if (element._chatJumpRemoveHandler) {
+                    element.removeEventListener('click', element._chatJumpRemoveHandler, true)
+                    delete element._chatJumpRemoveHandler
+                }
+            })
+            return existingIndicators.length
+        } catch (error) {
+            console.error('Error clearing existing indicators:', error)
+            return 0
+        }
+    },
+
+    /**
+     * Clear existing add indicators
+     * @param {string} addIndicatorClass - Add indicator CSS class name
+     * @returns {number} Number of cleared add indicators
+     */
+    clearExistingAddIndicators(addIndicatorClass = DEFAULT_ADD_INDICATOR_CLASS) {
+        try {
+            const existingAddIndicators = document.querySelectorAll(`.${addIndicatorClass}`)
+            existingAddIndicators.forEach(element => {
+                element.classList.remove(addIndicatorClass)
+                element.style.position = ''
+                element.removeAttribute('data-chat-id')
+                
+                if (element._chatJumpAddHandler) {
+                    element.removeEventListener('click', element._chatJumpAddHandler, true)
+                    delete element._chatJumpAddHandler
+                }
+            })
+            return existingAddIndicators.length
+        } catch (error) {
+            console.error('Error clearing existing add indicators:', error)
+            return 0
+        }
     },
 
     /**
@@ -268,6 +340,47 @@ export const clickHandlerUtils = {
         const handler = this.createRemoveClickHandler(chatId, targetElement, removeCallback, config)
         targetElement._chatJumpRemoveHandler = handler
         targetElement.addEventListener('click', handler, true)
+    },
+
+    /**
+     * Create add click event handler for + icon
+     * @param {string} chatId - Chat room ID
+     * @param {Element} targetElement - Target element
+     * @param {Function} addCallback - Add callback function
+     * @returns {Function} Click event handler
+     */
+    createAddClickHandler(chatId, targetElement, addCallback) {
+        return function(e) {
+            // Check if this element has the add indicator class
+            if (targetElement.classList.contains('chat-jump-add-indicator')) {
+                const rect = targetElement.getBoundingClientRect()
+                const clickX = e.clientX - rect.left
+                const rightAreaStart = rect.width * ADD_CLICK_DETECTION_CONFIG.RIGHT_AREA_RATIO
+                
+                if (clickX >= rightAreaStart) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    addCallback(chatId, targetElement)
+                    return false
+                }
+            }
+        }
+    },
+
+    /**
+     * Add click event listener for + icon
+     * @param {Element} targetElement - Target element
+     * @param {string} chatId - Chat room ID
+     * @param {Function} addCallback - Add callback function
+     */
+    attachAddClickHandler(targetElement, chatId, addCallback) {
+        if (targetElement._chatJumpAddHandler) {
+            targetElement.removeEventListener('click', targetElement._chatJumpAddHandler, true)
+        }
+
+        const handler = this.createAddClickHandler(chatId, targetElement, addCallback)
+        targetElement._chatJumpAddHandler = handler
+        targetElement.addEventListener('click', handler, true)
     }
 }
 
@@ -282,15 +395,21 @@ export const recentChatIndicatorManager = {
     addIndicators({
         storageKey = 'chatjump-recent-chats',
         indicatorClass = 'chat-jump-recent-indicator',
+        addIndicatorClass = DEFAULT_ADD_INDICATOR_CLASS,
         customSelectors = null,
         removeCallback = null,
+        addCallback = null,
         config = CLICK_DETECTION_CONFIG
     } = {}) {
         try {
             domUtils.clearExistingIndicators(indicatorClass)
+            domUtils.clearExistingAddIndicators(addIndicatorClass)
 
-            const recentChatRoomIds = localStorageUtils.getRecentChatIds(storageKey)
-            if (recentChatRoomIds.length === 0) return
+            const recentChats = localStorageUtils.getRecentChats(storageKey)
+            const recentChatRoomIds = recentChats.map(chat => chat.id)
+            const canAddMore = recentChats.length < MAX_RECENT_CHATS
+
+
 
             const foundItems = domUtils.findChatElements(customSelectors)
 
@@ -298,21 +417,69 @@ export const recentChatIndicatorManager = {
                 const href = item.getAttribute('href') || item.href
                 const chatId = domUtils.extractChatId(href)
 
-                if (chatId && recentChatRoomIds.includes(chatId)) {
+                if (chatId) {
                     const targetElement = domUtils.findSuitableParent(item)
+                    
+                    if (recentChatRoomIds.includes(chatId)) {
+                        // Add recent chat indicator (dot)
 
-                    targetElement.classList.add(indicatorClass)
-                    targetElement.style.position = 'relative'
-                    targetElement.setAttribute('data-chat-id', chatId)
+                        targetElement.classList.add(indicatorClass)
+                        targetElement.style.position = 'relative'
+                        targetElement.setAttribute('data-chat-id', chatId)
 
-                    if (removeCallback) {
-                        clickHandlerUtils.attachClickHandler(targetElement, chatId, removeCallback, config)
+                        if (removeCallback) {
+                            clickHandlerUtils.attachClickHandler(targetElement, chatId, removeCallback, config)
+                        }
+                    } else if (canAddMore && addCallback) {
+                        // Add + indicator for non-recent chats when we can add more
+
+                        targetElement.classList.add(addIndicatorClass)
+                        targetElement.style.position = 'relative'
+                        targetElement.setAttribute('data-chat-id', chatId)
+
+                        clickHandlerUtils.attachAddClickHandler(targetElement, chatId, (chatId, element) => {
+                            // Extract chat info for adding to localStorage
+                            const title = this.extractChatTitle(element, item)
+                            addCallback(chatId, title, href, element)
+                        })
                     }
                 }
             })
         } catch (error) {
             console.error('Error adding recent chat room indicators:', error)
         }
+    },
+
+    /**
+     * Extract chat title from element
+     * @param {Element} targetElement - Target element
+     * @param {Element} linkElement - Link element
+     * @returns {string} Chat title
+     */
+    extractChatTitle(targetElement, linkElement) {
+        let title = ''
+        
+        // Try to find title from various sources
+        const titleElement = linkElement.querySelector('[title]') ||
+            linkElement.closest('[title]') ||
+            targetElement.querySelector('[title]') ||
+            linkElement.querySelector('[class*="truncate"]') ||
+            linkElement.querySelector('[class*="overflow-hidden"]') ||
+            targetElement.querySelector('[class*="truncate"]') ||
+            targetElement.querySelector('[class*="overflow-hidden"]')
+
+        if (titleElement) {
+            title = titleElement.getAttribute('title') ||
+                titleElement.textContent?.trim() ||
+                ''
+        }
+        
+        // Fallback to link text
+        if (!title) {
+            title = linkElement.textContent?.trim() || targetElement.textContent?.trim() || ''
+        }
+        
+        return title || 'Untitled Chat'
     },
 
     /**
@@ -323,10 +490,12 @@ export const recentChatIndicatorManager = {
     removeChat(chatId, {
         storageKey = 'chatjump-recent-chats',
         indicatorClass = 'chat-jump-recent-indicator',
+        addIndicatorClass = DEFAULT_ADD_INDICATOR_CLASS,
         customSelectors = null,
         config = CLICK_DETECTION_CONFIG,
         updateDelay = 100,
-        removeCallback = null
+        removeCallback = null,
+        addCallback = null
     } = {}) {
         try {
             const success = localStorageUtils.removeRecentChat(chatId, storageKey)
@@ -336,8 +505,10 @@ export const recentChatIndicatorManager = {
                     this.addIndicators({
                         storageKey,
                         indicatorClass,
+                        addIndicatorClass,
                         customSelectors,
-                        removeCallback: removeCallback || ((id) => this.removeChat(id, { storageKey, indicatorClass, customSelectors, config, removeCallback })),
+                        removeCallback: removeCallback || ((id) => this.removeChat(id, { storageKey, indicatorClass, addIndicatorClass, customSelectors, config, removeCallback, addCallback })),
+                        addCallback,
                         config
                     })
                 }, updateDelay)
@@ -346,6 +517,49 @@ export const recentChatIndicatorManager = {
             }
         } catch (error) {
             console.error('Error removing chat room:', error)
+        }
+    },
+
+    /**
+     * Add chat room and update indicators
+     * @param {string} chatId - Chat room ID
+     * @param {string} title - Chat room title
+     * @param {string} href - Chat room URL
+     * @param {Object} options - Configuration options
+     */
+    addChat(chatId, title, href, {
+        storageKey = 'chatjump-recent-chats',
+        indicatorClass = 'chat-jump-recent-indicator',
+        addIndicatorClass = DEFAULT_ADD_INDICATOR_CLASS,
+        customSelectors = null,
+        config = CLICK_DETECTION_CONFIG,
+        updateDelay = 100,
+        removeCallback = null,
+        addCallback = null
+    } = {}) {
+        try {
+            const success = localStorageUtils.addRecentChat(chatId, title, href, storageKey)
+
+            if (success) {
+                setTimeout(() => {
+                    this.addIndicators({
+                        storageKey,
+                        indicatorClass,
+                        addIndicatorClass,
+                        customSelectors,
+                        removeCallback: removeCallback || ((id) => this.removeChat(id, { storageKey, indicatorClass, addIndicatorClass, customSelectors, config, removeCallback, addCallback })),
+                        addCallback: addCallback || ((id, title, href) => this.addChat(id, title, href, { storageKey, indicatorClass, addIndicatorClass, customSelectors, config, removeCallback, addCallback })),
+                        config
+                    })
+                }, updateDelay)
+
+                console.log(`Added to recent chat rooms: ${chatId} - ${title}`)
+                return true
+            }
+            return false
+        } catch (error) {
+            console.error('Error adding chat room:', error)
+            return false
         }
     }
 }

@@ -112,7 +112,8 @@ import {
   AUTO_SAVE_DELAY,
   CHAT_ROOM_URL_PATTERNS,
   USER_MESSAGE_SELECTORS,
-  LANGUAGE_PATTERNS
+  LANGUAGE_PATTERNS,
+  ADD_CLICK_DETECTION_CONFIG
 } from './constant/config.js'
 import { 
   debounce,
@@ -343,21 +344,53 @@ const syncRecentChatIds = () => {
 
 const removeRecentChat = (chatId) => {
   recentChatIndicatorManager.removeChat(chatId, {
-    storageKey: 'chatjump-recent-chats',
-    removeCallback: removeRecentChat
+    removeCallback: removeRecentChat,
+    addCallback: addRecentChat
   })
   
   syncRecentChatIds()
+}
+
+const addRecentChat = (chatId, title, href) => {
+  const success = recentChatIndicatorManager.addChat(chatId, title, href, {
+    removeCallback: removeRecentChat,
+    addCallback: addRecentChat
+  })
   
-  setTimeout(() => {
+  if (success) {
     syncRecentChatIds()
-  }, 150)
+    
+    // 獲取當前聊天室 ID
+    const getCurrentChatRoomId = () => {
+      const url = window.location.href
+      for (const pattern of CHAT_ROOM_URL_PATTERNS) {
+        const match = url.match(pattern)
+        if (match && match[1]) {
+          return match[1]
+        }
+      }
+      return null
+    }
+    
+    const currentChatRoomId = getCurrentChatRoomId()
+    
+    // 如果成功添加了當前聊天室，重新提取問題並啟用導航
+    if (chatId === currentChatRoomId) {
+      // 重新提取問題以確保導航功能正常工作
+      setTimeout(() => {
+        extractUserQuestions()
+      }, ADD_CLICK_DETECTION_CONFIG.NAVIGATOR_ENABLE_DELAY)
+    }
+  }
+  
+  return success
 }
 
 const addRecentChatIndicators = () => {
   recentChatIndicatorManager.addIndicators({
     storageKey: 'chatjump-recent-chats',
-    removeCallback: removeRecentChat
+    removeCallback: removeRecentChat,
+    addCallback: addRecentChat
   })
   
   syncRecentChatIds()
