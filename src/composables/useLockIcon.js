@@ -74,14 +74,41 @@ export function useLockIcon() {
     lockButton.title = 'Upgrade to Pro'
     lockButton.setAttribute('aria-label', 'Upgrade to Pro')
 
+    // Apply initial disabled state
+    updateDisabledState(lockButton)
+
     // Add click handler
     lockButton.addEventListener('click', (e) => {
       e.preventDefault()
       e.stopPropagation()
+      // If disabled, do nothing
+      if (isDialogDisabled()) return
       openCallback?.(lockButton)
     })
 
     return lockButton
+  }
+
+  function isDialogDisabled() {
+    try {
+      return !!JSON.parse(localStorage.getItem('chatjump-hide-lock-dialog') || 'false')
+    } catch {
+      return false
+    }
+  }
+
+  function updateDisabledState(button) {
+    const disabled = isDialogDisabled()
+    if (!button) return
+    if (disabled) {
+      button.classList.add('is-disabled')
+      button.setAttribute('aria-disabled', 'true')
+      button.title = ''
+    } else {
+      button.classList.remove('is-disabled')
+      button.removeAttribute('aria-disabled')
+      button.title = 'Upgrade to Pro'
+    }
   }
 
   function positionLockButton() {
@@ -123,6 +150,9 @@ export function useLockIcon() {
       parent.appendChild(button)
     }
     targetElement = parent
+
+    // Update disabled state on each reposition
+    updateDisabledState(button)
 
     return true
   }

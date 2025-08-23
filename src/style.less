@@ -346,8 +346,16 @@
 }
 
 .chatjump-lock-button:hover {
-    background: @bg-hover;
-    color: @text-primary;
+    background: @color-surface02 !important;
+}
+
+.chatjump-lock-button.is-disabled {
+    cursor: default;
+}
+
+.chatjump-lock-button.is-disabled:hover {
+    background: transparent;
+    color: @text-secondary;
 }
 
 .chatjump-lock-button img {
@@ -360,7 +368,7 @@
 .lock-popover {
     position: fixed !important;
     display: block;
-    z-index: 2147483647 !important;
+    z-index: 100;
 }
 
 .lock-dialog {
@@ -368,7 +376,7 @@
     border-radius: 8px;
     overflow: hidden;
     box-shadow: @color-shadow;
-    background: @color-surface01;
+    background: @color-surface00;
     color: @color-text-primary;
     font-family: inherit;
 }
@@ -384,8 +392,10 @@
 }
 
 .lock-dialog-title {
-    font-weight: 600;
-    margin: 0;
+    color: @color-text-01;
+    font-weight: 800;
+    margin: 8px 0;
+    font-size: 20px;
 }
 
 /* Header hero illustration */
@@ -405,14 +415,6 @@
     max-width: 221px;
     width: 80%;
     height: auto;
-}
-
-/* Title visual per reference */
-.lock-dialog-body h2 {
-    margin: 12px 0 8px;
-    font-size: 20px;
-    font-weight: 800;
-    color: @color-text-primary;
 }
 
 .lock-dialog-close {
@@ -438,7 +440,7 @@
 }
 
 .lock-dialog-body {
-    padding: 14px 16px;
+    padding: 18px 20px;
 }
 
 .lock-dialog-text {
@@ -472,8 +474,6 @@
     padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
-    border: 1px solid @color-btn-border;
-    background: @color-btn-bg;
     color: @color-btn-text;
     font-size: 14px;
     transition: all 0.2s ease;
@@ -489,6 +489,7 @@
         color: #fff;
         border-color: @color-primary;
         flex: 2 1 0;
+        font-weight: 800;
 
         &:hover {
             background: #e67a1a;

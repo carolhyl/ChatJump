@@ -12,7 +12,7 @@
         <button class="lock-dialog-close" type="button" @click="close" aria-label="Close dialog">✕</button>
       </div>
       <div class="lock-dialog-body">
-        <h2 :id="titleId">
+        <h2 class="lock-dialog-title" :id="titleId">
           {{ title }}
         </h2>
         <p class="lock-dialog-text">
