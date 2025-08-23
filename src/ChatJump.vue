@@ -53,7 +53,7 @@
               v-if="editingQuestionIndex !== index"
               class="chat-jump-question-title"
               @dblclick="startEditingQuestionTitle(question, index)"
-              title="雙擊編輯標題"
+              title="double click to edit"
             >
               {{ getDisplayTitle(question) }}
             </div>
@@ -91,13 +91,6 @@
           </div>
         </div>
       </div>
-    </div>
-    
-    <div 
-      v-if="questions.length === 0" 
-      class="chat-jump-no-questions"
-    >
-      <div class="chat-jump-loading">正在搜尋問題...</div>
     </div>
   </div>
 </template>
@@ -143,6 +136,39 @@ let lastScrollTime = 0
 
 const lockDialogManager = new LockDialogManager()
 
+const applyTheme = (theme) => {
+  const root = document.documentElement
+  root.classList.remove('theme-light', 'theme-dark')
+  if (!theme) {
+    return
+  }
+  
+  theme === 'light' ? root.classList.add('theme-light') : root.classList.add('theme-dark')
+}
+
+const getStoredTheme = () => {
+  try {
+    return localStorage.getItem('theme')
+  } catch {
+    return null
+  }
+}
+
+const initTheme = () => {
+  try {
+    const theme = getStoredTheme()
+
+    if(!theme) {
+      const media = window.matchMedia?.('(prefers-color-scheme: dark)');
+      applyTheme(media?.matches ? 'dark' : 'light');
+      return;
+    }
+    applyTheme(theme);
+  } catch {
+    applyTheme(null)
+  }
+}
+
 const shouldShowNavigator = computed(() => {
   if (questions.value.length === 0) return false
   
@@ -176,23 +202,6 @@ const truncateText = (text, customMaxLength = null) => {
   
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
-}
-
-const loadSavedQuestions = () => {
-  try {
-    const saved = localStorage.getItem('chatjump-saved-questions')
-    if (saved) {
-      savedQuestions.value = JSON.parse(saved)
-    }
-    
-    const deletedIds = localStorage.getItem('chatjump-deleted-questions')
-    if (deletedIds) {
-      const idsArray = JSON.parse(deletedIds)
-      deletedQuestionIds.value = new Set(idsArray)
-    }
-  } catch (error) {
-    savedQuestions.value = []
-  }
 }
 
 const saveSavedQuestions = () => {
@@ -315,7 +324,6 @@ const deleteQuestion = (questionId) => {
     questions.value = questions.value.filter((_, index) => index !== questionIndex)
   }
   
-  // Save deleted IDs to localStorage for persistence
   localStorage.setItem('chatjump-deleted-questions', JSON.stringify([...deletedQuestionIds.value]))
 }
 
@@ -601,6 +609,12 @@ const extractUserQuestions = () => {
 }
 
 onMounted(() => {
+  initTheme()
+  // const storageHandler = (e) => {
+  //   if (e.key === 'theme') initTheme()
+  // }
+  // window.addEventListener('storage', storageHandler)
+
   extractUserQuestions()
   
   setTimeout(() => {
@@ -722,6 +736,12 @@ onMounted(() => {
   })
   
   scrollObserver = { directScrollHandler, intersectionObserver }
+  // Cleanup listeners on unmount
+  onBeforeUnmount(() => {
+    window.removeEventListener('storage', storageHandler)
+    window.removeEventListener('chatjump-theme-change', sameTabHandler)
+    teardownSystemListener?.()
+  })
 })
 
 onUnmounted(() => {

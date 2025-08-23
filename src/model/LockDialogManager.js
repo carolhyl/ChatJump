@@ -58,7 +58,7 @@ class LockDialogManager {
     shouldShow() {
         try {
             const isHide = localStorage.getItem('chatjump-hide-lock-dialog')
-            return isHide !== true
+            return JSON.parse(isHide) !== true
         } catch {
             return true
         }

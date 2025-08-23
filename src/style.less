@@ -7,268 +7,201 @@
     transform: translateY(-50%);
     z-index: 11;
     pointer-events: auto;
-}
 
-.chat-jump-navigator {
-    max-height: 50vh;
-    font-family: @font-family-primary;
-    overflow: hidden;
-}
+    .chat-jump-navigator {
+        max-height: 50vh;
+        font-family: @font-family-primary;
+        overflow: hidden;
 
-.chat-jump-nav-items {
-    max-height: calc(50vh - 40px);
-    overflow-y: auto;
-    padding: 4px 0;
-}
+        .chat-jump-nav-items {
+            max-height: calc(50vh - 40px);
+            overflow-y: auto;
+            padding: 4px 0;
 
-.chat-jump-collapsed-info {
-    text-align: center;
-    padding: 8px 4px;
-    margin: 0;
-}
+            .chat-jump-collapsed-info {
+                text-align: center;
+                padding: 8px 4px;
+                margin: 0;
 
-.chat-jump-question-content {
-    position: relative;
+                .chat-jump-question-count {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: @primary-color;
+                    line-height: 1;
+                    margin: 0;
+                    padding: 0;
+                }
+            }
 
-    .chat-jump-edit-icon {
-        position: absolute;
-        top: 2px;
-        right: 2px;
-        width: 16px;
-        height: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        padding: 2px;
-        border-radius: 4px;
-        transition: all 0.2s ease;
-        background-color: @bg-hover;
+            .chat-jump-indicators {
+                margin: 8px 0 0;
+                padding: 0;
 
-        svg {
-            display: block;
-            width: 16px;
-            height: 16px;
+                .chat-jump-indicators-container {
+                    position: relative;
+                    transition: all 0.3s ease;
 
-            path {
-                transition: fill 0.2s ease;
+                    .chat-jump-nav-item {
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        margin: 2px 4px;
+                        border-radius: 6px;
+                        padding: 0;
+
+                        .chat-jump-nav-icon {
+                            display: flex;
+                            flex-direction: column;
+                            align-items: end;
+                            height: 14px;
+                            justify-content: center;
+
+                            .chat-jump-dash-icon {
+                                width: 20px;
+                                height: 3px;
+                                background-color: @color-icon-02;
+                                border-radius: 2px;
+                                transition: all 0.3s ease;
+                            }
+
+                            .chat-jump-dash-icon.active {
+                                width: 28px;
+                                height: 4px;
+                                background-color: @color-icon-03;
+                                // box-shadow: @shadow-active;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
-    .chat-jump-delete-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 20px;
-        height: 20px;
-        border-radius: 4px;
-        cursor: pointer;
-        color: #9E9E9E;
+    .chat-jump-question-list-expanded {
         position: absolute;
-        top: 4px;
-        right: 4px;
+        padding: 7px;
+        right: 40px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 234px;
+        max-height: 50vh;
+        background: @color-surface00;
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        box-shadow: @shadow-expanded;
+        overflow-y: auto;
+        z-index: 10;
+
+        .chat-jump-question-item {
+            padding: 6px 4px;
+            // border-bottom: 1px solid @border-separator;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            background-color: transparent;
+            margin: 0;
+
+            .chat-jump-question-content {
+                position: relative;
+
+                .chat-jump-edit-icon {
+                    position: absolute;
+                    top: 2px;
+                    right: 2px;
+                    width: 16px;
+                    height: 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    padding: 2px;
+                    border-radius: 4px;
+                    transition: all 0.2s ease;
+                    color: @color-icon-01;
+                    background-color: @color-surface01;
+
+                    svg {
+                        display: block;
+                        width: 16px;
+                        height: 16px;
+
+                        path {
+                            transition: fill 0.2s ease;
+                        }
+                    }
+                }
+
+                .chat-jump-delete-icon {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    color: #9E9E9E;
+                    position: absolute;
+                    top: 4px;
+                    right: 4px;
+                }
+            }
+        }
+
+        .chat-jump-question-item:last-child {
+            border-bottom: none;
+        }
+
+        .chat-jump-question-item-hovered {
+            background-color: @color-surface02;
+            border-radius: 4px;
+        }
     }
 }
 
-.chat-jump-question-count {
-    font-size: 18px;
-    font-weight: bold;
-    color: @primary-color;
-    line-height: 1;
-    margin: 0;
-    padding: 0;
-}
-
-.chat-jump-count-label {
-    font-size: 10px;
-    color: @text-tertiary;
-    margin-top: 2px;
-    margin: 0;
-    padding: 0;
-}
-
-.chat-jump-indicators {
-    margin-top: 8px;
-    margin: 0;
-    padding: 0;
-}
-
-.chat-jump-indicators-container {
-    position: relative;
-    transition: all 0.3s ease;
-}
-
-.chat-jump-ellipsis-top,
-.chat-jump-ellipsis-bottom {
-    text-align: center;
-    padding: 2px 0;
-    margin: 1px 0;
-}
-
-.chat-jump-ellipsis-dots {
-    font-size: 12px;
-    color: @text-quaternary;
-    line-height: 1;
-    margin: 0;
-    padding: 0;
-}
-
-.chat-jump-ellipsis-count {
-    font-size: 8px;
-    color: @text-light;
-    line-height: 1;
-    margin: 0;
-    padding: 0;
-}
-
-.chat-jump-nav-item {
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin: 2px 4px;
-    border-radius: 6px;
-    padding: 0;
-}
-
-.chat-jump-nav-icon {
-    display: flex;
-    flex-direction: column;
-    align-items: end;
-    height: 14px;
-    justify-content: center;
-}
-
-.chat-jump-dash-icon {
-    width: 20px;
-    height: 3px;
-    background-color: @grey-400;
-    border-radius: 2px;
-    transition: all 0.3s ease;
-}
-
-.chat-jump-dash-icon.active {
-    width: 28px;
-    height: 4px;
-    background-color: @black-100;
-    // box-shadow: @shadow-active;
-}
-
-.chat-jump-question-number {
-    font-size: 10px;
-    color: @text-secondary;
-    margin-top: 2px;
-    padding: 0;
-}
-
-.chat-jump-question-list-expanded {
-    position: absolute;
-    padding: 7px;
-    right: 40px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 234px;
-    max-height: 50vh;
-    background: @bg-expanded;
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
-    box-shadow: @shadow-expanded;
-    overflow-y: auto;
-    z-index: 10;
-}
-
-.chat-jump-question-item {
-    padding: 6px 4px;
-    // border-bottom: 1px solid @border-separator;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    background-color: transparent;
-    margin: 0;
-}
-
-.chat-jump-question-item:last-child {
-    border-bottom: none;
-}
-
-.chat-jump-question-item-hovered {
-    background-color: @bg-hover;
-    border-radius: 4px;
-}
 
 .chat-jump-question-content {
     display: flex;
     align-items: flex-start;
     gap: 8px;
     position: relative;
-}
 
-
-.chat-jump-question-number-badge {
-    color: @text-badge;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 500;
-}
-
-.chat-jump-question-text {
-    font-size: 13px;
-    line-height: 1.4;
-    color: @text-primary;
-    flex: 1;
-    word-break: break-word;
-}
-
-.chat-jump-inline-input {
-    width: 100%;
-    background: @white;
-    border: 1px solid @primary-color;
-    border-radius: 3px;
-    padding: 2px 4px;
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1.4;
-    margin: 0;
-    outline: none;
-    font-family: inherit;
-    color: @text-primary;
-    box-sizing: border-box;
-
-    &:focus {
-        border-color: @primary-color;
-        box-shadow: 0 0 0 2px rgba(237, 135, 66, 0.2);
+    .chat-jump-question-number-badge {
+        color: @color-text-secondary;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 500;
     }
-}
 
-.chat-jump-ellipsis-text {
-    font-size: 18px;
-    color: @primary-color;
-    font-weight: bold;
-    margin-bottom: 4px;
-    margin: 0;
-    padding: 0;
-}
+    .chat-jump-question-text {
+        font-size: 13px;
+        line-height: 1.4;
+        color: @color-text-primary;
+        flex: 1;
+        word-break: break-word;
 
-.chat-jump-ellipsis-count {
-    font-size: 11px;
-    color: @text-tertiary;
-    margin: 0;
-    padding: 0;
-}
+        .chat-jump-inline-input {
+            width: 100%;
+            min-height: 13px;
+            background: @color-surface00;
+            border: 1px solid @primary-color;
+            border-radius: 3px;
+            padding: 2px 4px;
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1.4;
+            margin: 0;
+            outline: none;
+            font-family: inherit;
+            color: @color-text-01;
+            box-sizing: border-box;
 
-.chat-jump-no-questions {
-    padding: 20px;
-    text-align: center;
-    color: @text-secondary;
-    font-size: 14px;
-    margin: 0;
-}
-
-.chat-jump-loading {
-    color: @text-secondary;
-    margin: 0;
-    padding: 0;
+            &:focus {
+                border-color: @primary-color;
+                box-shadow: 0 0 0 2px rgba(237, 135, 66, 0.2);
+            }
+        }
+    }
 }
 
 .chat-jump-nav-items::-webkit-scrollbar,
@@ -439,9 +372,9 @@ html.dark .chat-jump-add-indicator [class*="overflow-hidden"]::after {
     width: min(360px, 92vw);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.22);
-    background: #fff;
-    color: #111;
+    box-shadow: @color-shadow;
+    background: @color-surface02;
+    color: @color-text-primary;
     font-family: inherit;
 }
 
@@ -486,7 +419,7 @@ html.dark .chat-jump-add-indicator [class*="overflow-hidden"]::after {
 .lock-dialog__text {
     margin: 0 0 12px 0;
     line-height: 1.5;
-    color: inherit;
+    color: @color-text-primary;
 }
 
 .lock-dialog__checkbox {
@@ -513,41 +446,23 @@ html.dark .chat-jump-add-indicator [class*="overflow-hidden"]::after {
     padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    background: #fff;
-    color: #111;
+    border: 1px solid @color-btn-border;
+    background: @color-btn-bg;
+    color: @color-btn-text;
     font-size: 14px;
     transition: all 0.2s ease;
 
     &:hover {
-        background: #f5f5f5;
+        background: @color-btn-bg-hover;
     }
 
     &--primary {
-        background: #FF8A2A;
+        background: @color-primary;
         color: #fff;
-        border-color: #FF8A2A;
+        border-color: @color-primary;
 
         &:hover {
             background: #e67a1a;
-        }
-    }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .lock-dialog {
-        background: #1f1f1f;
-        color: #e5e5e5;
-    }
-
-    .lock-dialog__btn {
-        background: #2a2a2a;
-        color: #e5e5e5;
-        border-color: rgba(255, 255, 255, 0.08);
-
-        &:hover {
-            background: #333;
         }
     }
 }

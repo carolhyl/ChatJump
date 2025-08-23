@@ -1,4 +1,96 @@
 @primary-color: #ED8742;
+@font-family-primary: 'Inter', BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+:root {
+    /* SURFACE */
+    --color-surface00: #FFFFFF;
+    --color-surface01: #BDBDBD;
+    --color-surface02: #E0E0E0;
+
+    /* TEXT */
+    --color-text-primary: #616161;
+    --color-text-secondary: #BDBDBD;
+    --color-text-01: #616161;
+    --color-text-02: #FFFFFF;
+
+    /* ICON */
+    --color-icon-01: #9E9E9E;
+    --color-icon-02: #E6E4E0;
+    --color-icon-03: #000000;
+
+    /* not defined */
+    /* BORDER */
+    --color-border: @border-light;
+
+    /* SHADOW */
+    --color-shadow: 0 8px 30px rgba(0, 0, 0, 0.22);
+
+    /* BUTTON */
+    --color-btn-bg: @white;
+    --color-btn-text: @grey-900;
+    --color-btn-border: rgba(0, 0, 0, 0.1);
+    --color-btn-bg-hover: #f5f5f5;
+
+    /* BRAND */
+    --color-primary: @primary-color;
+}
+
+.theme-dark {
+    /* SURFACE */
+    --color-surface00: #191919;
+    --color-surface01: #757575;
+    --color-surface02: #3E3E3E;
+
+    /* TEXT */
+    --color-text-primary: #9E9E9E;
+    --color-text-secondary: #757575;
+    --color-text-01: #FFFFFF;
+    --color-text-02: #ED8742;
+
+    /* ICON */
+    --color-icon-01: #9E9E9E;
+    --color-icon-02: #404040;
+    --color-icon-03: #FFFFFF;
+
+    /* not defined */
+    /* BORDER */
+    --color-border: #2a2a2a;
+
+    /* SHADOW */
+    --color-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+
+    /* BUTTON */
+    --color-btn-bg: #242424;
+    --color-btn-text: #f3f3f3;
+    --color-btn-border: #333333;
+    --color-btn-bg-hover: #2b2b2b;
+
+    /* BRAND */
+    --color-primary: @primary-color;
+}
+
+@color-surface00: var(--color-surface00);
+@color-surface01: var(--color-surface01);
+@color-surface02: var(--color-surface02);
+
+@color-text-primary: var(--color-text-primary);
+@color-text-secondary: var(--color-text-secondary);
+@color-text-01: var(--color-text-01);
+@color-text-02: var(--color-text-02);
+
+@color-icon-01: var(--color-icon-01);
+@color-icon-02: var(--color-icon-02);
+@color-icon-03: var(--color-icon-03);
+
+@color-border: var(--color-border);
+@color-shadow: var(--color-shadow);
+
+@color-btn-bg: var(--color-btn-bg);
+@color-btn-text: var(--color-btn-text);
+@color-btn-border: var(--color-btn-border);
+@color-btn-bg-hover: var(--color-btn-bg-hover);
+
+@color-primary: var(--color-primary);
 
 @grey-900: #333;
 @grey-600: #666;
@@ -43,5 +135,3 @@
 
 @shadow-main: 0 4px 20px @shadow-light;
 @shadow-expanded: 15px 16px 30px @shadow-light;
-
-@font-family-primary: 'Inter', BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
