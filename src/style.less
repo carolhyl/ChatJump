@@ -397,3 +397,127 @@ html.dark .chat-jump-add-indicator [class*="overflow-hidden"]::after {
     background-color: #4CAF50 !important;
     box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
 }
+
+/* Lock Popover Dialog Styles */
+.lock-popover {
+    position: fixed !important;
+    display: block !important;
+    z-index: 2147483647 !important;
+}
+
+.lock-dialog {
+    width: min(360px, 92vw);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.22);
+    background: #fff;
+    color: #111;
+    font-family: inherit;
+}
+
+.lock-dialog__header {
+    padding: 12px 16px;
+    background: linear-gradient(180deg, #FFA34D, #FF8A2A);
+    color: #fff;
+    position: relative;
+}
+
+.lock-dialog__title {
+    font-weight: 600;
+    margin: 0;
+}
+
+.lock-dialog__close {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+}
+
+.lock-dialog__body {
+    padding: 14px 16px;
+}
+
+.lock-dialog__text {
+    margin: 0 0 12px 0;
+    line-height: 1.5;
+    color: inherit;
+}
+
+.lock-dialog__checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 14px;
+    cursor: pointer;
+    
+    input[type="checkbox"] {
+        margin: 0;
+    }
+}
+
+.lock-dialog__actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 0 16px 14px;
+}
+
+.lock-dialog__btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: #fff;
+    color: #111;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    
+    &:hover {
+        background: #f5f5f5;
+    }
+    
+    &--primary {
+        background: #FF8A2A;
+        color: #fff;
+        border-color: #FF8A2A;
+        
+        &:hover {
+            background: #e67a1a;
+        }
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .lock-dialog {
+        background: #1f1f1f;
+        color: #e5e5e5;
+    }
+    
+    .lock-dialog__btn {
+        background: #2a2a2a;
+        color: #e5e5e5;
+        border-color: rgba(255, 255, 255, 0.08);
+        
+        &:hover {
+            background: #333;
+        }
+    }
+}

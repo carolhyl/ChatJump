@@ -103,7 +103,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onBeforeUnmount, nextTick } from 'vue'
+import LockDialogManager from './model/LockDialogManager.js'
+import { useLockIcon } from './composables/useLockIcon'
 import { 
   ENABLE_ALL_CHATS,
   ENABLE_DELETE_TITLE,
@@ -138,6 +140,8 @@ let observer = null
 let scrollObserver = null
 let lastScrollY = 0
 let lastScrollTime = 0
+
+const lockDialogManager = new LockDialogManager()
 
 const shouldShowNavigator = computed(() => {
   if (questions.value.length === 0) return false
@@ -255,8 +259,6 @@ const startEditingTitle = (questionId, currentTitle, questionIndex = -1) => {
     }
   })
 }
-
-
 
 const startEditingQuestionTitle = (question, questionIndex) => {
   const savedQuestion = savedQuestions.value.find(q => 
@@ -599,7 +601,6 @@ const extractUserQuestions = () => {
 }
 
 onMounted(() => {
-  loadSavedQuestions()  
   extractUserQuestions()
   
   setTimeout(() => {
@@ -611,6 +612,11 @@ onMounted(() => {
     syncRecentChatIds()
     
     addRecentChatIndicators()
+    
+    const { initLockIcon } = useLockIcon()
+    initLockIcon((lockButton) => {
+      lockDialogManager.open(lockButton)
+    })
     
     setTimeout(() => {      
       if (questions.value.length > 0) {
@@ -660,12 +666,14 @@ onMounted(() => {
   window.addEventListener('scroll', directScrollHandler, { passive: true })
   window.addEventListener('resize', handleScroll)
   
-  // 創建防抖版本的更新函數
   const debouncedUpdateIndicators = debounce(addRecentChatIndicators, 300)
+  // start lock icon manager
+  // lockIcon.start()
   
   observer = new MutationObserver((mutations) => {
     let shouldUpdateQuestions = false
     let shouldUpdateIndicators = false
+    let shouldTryLock = false
     
     mutations.forEach((mutation) => {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
@@ -676,13 +684,20 @@ onMounted(() => {
           node.nodeType === 1 && (
             node.querySelector?.('a[href*="/c/"]') ||
             node.matches?.('a[href*="/c/"]') ||
-            node.classList?.contains('__menu-item')
+            node.classList?.contains('__menu-item') ||
+            node.querySelector?.('h2.__menu-label')
           )
         )
         
         if (hasRelevantChanges) {
           shouldUpdateIndicators = true
         }
+
+        // 如果側欄或標題發生變化，嘗試掛載鎖頭按鈕
+        const hasMenuLabel = Array.from(mutation.addedNodes).some(node => 
+          node.nodeType === 1 && (node.matches?.('h2.__menu-label') || node.querySelector?.('h2.__menu-label'))
+        )
+        if (hasMenuLabel) shouldTryLock = true
       }
     })
     
@@ -721,4 +736,6 @@ onUnmounted(() => {
     window.removeEventListener('resize', detectActiveQuestion)
   }
 })
+
+onBeforeUnmount(() => lockDialogManager.destroy())
 </script>

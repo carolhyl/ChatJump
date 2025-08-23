@@ -59,3 +59,30 @@ export const ADD_CLICK_DETECTION_CONFIG = {
     RIGHT_AREA_RATIO: 0.5,           // Right 50% of element for click detection
     NAVIGATOR_ENABLE_DELAY: 200      // Delay before re-enabling navigator
 }
+
+// Lock icon configuration and selectors (shared)
+export const LOCK_ICON = {
+    BUTTON_CLASS: 'chatjump-lock-button',
+    BUTTON_ID: 'chatjump-lock-button',
+    ORDERED_HEADING_SELECTORS: [
+        'h2.__menu-label',
+        'nav h1, nav h2',
+        'aside h1, aside h2',
+        '[role="navigation"] h1, [role="navigation"] h2',
+        '.sidebar h1, .sidebar h2',
+        '[class*="sidebar"] h1, [class*="sidebar"] h2',
+        'h1, h2'
+    ],
+    SIDEBAR_CONTAINERS: [
+        'nav[aria-label]',
+        '[role="navigation"]',
+        '.sidebar',
+        '[class*="sidebar"]',
+        '[class*="nav"]'
+    ],
+    SIDEBAR_TRIGGERS_SELECTOR: [
+        'h1', 'h2', 'h2.__menu-label',
+        'nav', 'aside', '[role="navigation"]',
+        '.sidebar', '[class*="sidebar"]', '[class*="nav"]'
+    ].join(',')
+}
