@@ -103,6 +103,9 @@ function setupOutsideClickHandler(anchorElement) {
 function close() {
   isVisible.value = false
   cleanupOutsideClickHandler()
+  try {
+    localStorage.setItem('chatjump-hide-lock-dialog', JSON.stringify(!!dontShowAgain.value))
+  } catch {}
   emit('close')
 }
 

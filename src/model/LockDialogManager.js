@@ -1,7 +1,7 @@
- import { createApp, nextTick } from 'vue'
- import LockPopover from '../components/LockPopover.vue'
+import { createApp, nextTick } from 'vue'
+import LockPopover from '../components/LockPopover.vue'
 
- class LockDialogManager {
+class LockDialogManager {
     constructor() {
         this.app = null
         this.instance = null
@@ -36,6 +36,7 @@
 
     async open(anchorElement) {
         if (!anchorElement) return
+        if (!this.shouldShow()) return
 
         const instance = this.ensureInitialized()
 
@@ -46,6 +47,20 @@
             await nextTick()
             const retryInstance = this.ensureInitialized()
             retryInstance?.openNearAnchor?.(anchorElement)
+        }
+    }
+
+    close() {
+        const instance = this.ensureInitialized()
+        instance?.close?.()
+    }
+
+    shouldShow() {
+        try {
+            const isHide = localStorage.getItem('chatjump-hide-lock-dialog')
+            return isHide !== true
+        } catch {
+            return true
         }
     }
 
