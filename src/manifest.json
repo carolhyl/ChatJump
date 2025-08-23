@@ -28,7 +28,8 @@
       "resources": [
         "src/main.js",
         "src/ChatJump.vue",
-        "src/style.css"
+        "src/style.css",
+        "src/svg/illustrate_pop_title.svg"
       ],
       "matches": [
         "https://chat.openai.com/*",

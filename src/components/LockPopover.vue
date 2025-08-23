@@ -6,20 +6,29 @@
     :style="popoverStyle"
     @keydown.esc.stop.prevent="handleEscapeKey"
   >
-    <div class="lock-dialog" role="dialog" aria-modal="false" :aria-labelledby="titleId">
-      <div class="lock-dialog__header">
-        <div :id="titleId" class="lock-dialog__title">Upgrade for Pro features</div>
-        <button class="lock-dialog__close" type="button" @click="close" aria-label="Close dialog">✕</button>
+    <div class="lock-dialog" role="dialog">
+      <div class="lock-dialog-header">
+        <div class="lock-dialog-hero" v-html="heroSvg" aria-hidden="true"></div>
+        <button class="lock-dialog-close" type="button" @click="close" aria-label="Close dialog">✕</button>
       </div>
-      <div class="lock-dialog__body">
-        <p class="lock-dialog__text">Unlock seamless navigation and priority support with Pro. Grab a 30% early-bird discount ($49 lifetime) now!</p>
-        <label class="lock-dialog__checkbox">
-          <input type="checkbox" v-model="dontShowAgain" /> Don't show this again
+      <div class="lock-dialog-body">
+        <h2 :id="titleId">
+          {{ title }}
+        </h2>
+        <p class="lock-dialog-text">
+          {{ description }}
+        </p>
+        <label class="lock-dialog-checkbox">
+          <input type="checkbox" v-model="dontShowAgain" /> {{ checkboxLabel }}
         </label>
       </div>
-      <div class="lock-dialog__actions">
-        <button class="lock-dialog__btn" type="button" @click="close">Dismiss</button>
-        <button class="lock-dialog__btn lock-dialog__btn--primary" type="button" @click="handleUpgrade">Upgrade now</button>
+      <div class="lock-dialog-actions">
+        <button class="lock-dialog-btn lock-dialog-btn-primary" type="button" @click="handleUpgrade">
+          {{ upgradeText }}
+        </button>
+        <button class="lock-dialog-btn" type="button" @click="close">
+          {{ dismissText }}
+        </button>
       </div>
     </div>
   </div>
@@ -27,6 +36,7 @@
 
 <script setup>
 import { ref, reactive, computed, onBeforeUnmount } from 'vue'
+import heroSvg from '../svg/illustrate_pop_title.svg?raw'
 
 const props = defineProps({
   popoverId: { type: String, default: 'chatjump-lock-popover' },
@@ -39,6 +49,12 @@ const emit = defineEmits(['close', 'upgrade'])
 const isVisible = ref(false)
 const position = reactive({ left: 0, top: 0 })
 const dontShowAgain = ref(false)
+
+const title = ref('Say goodbye to chat chaos!')
+const description = ref('Unlock seamless navigation and priority support with Pro. Grab a 30% early-bird discount ($49 lifetime) now!')
+const checkboxLabel = ref('Don\'t show this again')
+const upgradeText = ref('Upgrade now')
+const dismissText = ref('Dismiss')
 
 // Computed
 const titleId = computed(() => `${props.popoverId}-title`)
