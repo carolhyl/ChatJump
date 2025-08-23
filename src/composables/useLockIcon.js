@@ -11,9 +11,15 @@ export function useLockIcon() {
   let resizeObserver = null
   let openCallback = null
   let cleanupFunctions = []
+  let observedContainer = null
+  let initOptions = {
+    containerSelector: null,
+    headingSelectors: null,
+    sidebarSelectors: null
+  }
 
   function findChatTitle() {
-    const orderedHeadingSelectors = LOCK_ICON.ORDERED_HEADING_SELECTORS
+    const orderedHeadingSelectors = initOptions.headingSelectors || LOCK_ICON.ORDERED_HEADING_SELECTORS
 
     const isVisible = (el) => {
       const style = getComputedStyle(el)
@@ -32,7 +38,7 @@ export function useLockIcon() {
       }
     }
 
-    const sidebarSelectors = LOCK_ICON.SIDEBAR_CONTAINERS
+    const sidebarSelectors = initOptions.sidebarSelectors || LOCK_ICON.SIDEBAR_CONTAINERS
     for (const selector of sidebarSelectors) {
       const elements = document.querySelectorAll(selector)
       for (const el of elements) {
@@ -43,46 +49,30 @@ export function useLockIcon() {
     return null
   }
 
+  function resolveContainer() {
+    if (initOptions.containerSelector) {
+      const el = document.querySelector(initOptions.containerSelector)
+      if (el) return el
+    }
+    const title = findChatTitle()
+    if (!title) return document.body
+    // Prefer closest sidebar-like container from constants
+    for (const sel of (initOptions.sidebarSelectors || LOCK_ICON.SIDEBAR_CONTAINERS)) {
+      const container = title.closest(sel)
+      if (container) return container
+    }
+    return title.parentElement || document.body
+  }
+
   function createLockButton() {
     if (lockButton) return lockButton
 
     lockButton = document.createElement('button')
     lockButton.id = LOCK_ICON.BUTTON_ID
     lockButton.className = LOCK_ICON.BUTTON_CLASS
-    lockButton.innerHTML = `<img src="${lockSvg}" alt="lock" style="width: 12px; height: 12px; display: block;" />`
+    lockButton.innerHTML = `<img src="${lockSvg}" alt="lock" />`
     lockButton.title = 'Upgrade to Pro'
     lockButton.setAttribute('aria-label', 'Upgrade to Pro')
-
-    // Apply styles
-    Object.assign(lockButton.style, {
-      position: 'absolute',
-      right: '8px',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      width: '24px',
-      height: '24px',
-      border: 'none',
-      background: 'transparent',
-      cursor: 'pointer',
-      color: '#666',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: '4px',
-      transition: 'all 0.2s ease',
-      zIndex: '1000'
-    })
-
-    // Add hover effects
-    lockButton.addEventListener('mouseenter', () => {
-      lockButton.style.background = 'rgba(0,0,0,0.05)'
-      lockButton.style.color = '#333'
-    })
-
-    lockButton.addEventListener('mouseleave', () => {
-      lockButton.style.background = 'transparent'
-      lockButton.style.color = '#666'
-    })
 
     // Add click handler
     lockButton.addEventListener('click', (e) => {
@@ -102,9 +92,8 @@ export function useLockIcon() {
       return false
     }
 
-    removeLockButton()
-
-    const button = createLockButton()
+    // Reuse existing button if present to avoid flicker
+    const button = document.getElementById(LOCK_ICON.BUTTON_ID) || createLockButton()
 
     // For better visibility, attach directly to the h2 title element
     const parent = chatTitle.parentElement || chatTitle
@@ -120,23 +109,20 @@ export function useLockIcon() {
       chatTitle.style.position = 'relative'
     }
 
-    // Calculate final position first to prevent animation
+    // Calculate final position
     const titleRect = chatTitle.getBoundingClientRect()
     const parentRect = parent.getBoundingClientRect()
     const relativeTop = titleRect.top - parentRect.top + (titleRect.height / 2)
 
-    // Set final position immediately to prevent animation
+    // Set position (styling handled via CSS class)
     button.style.top = `${relativeTop}px`
     button.style.transform = 'translateY(-50%)'
-    button.style.transition = 'none' // Disable transitions during positioning
 
-    parent.appendChild(button)
+    // Attach button if not already under the correct parent
+    if (button.parentElement !== parent) {
+      parent.appendChild(button)
+    }
     targetElement = parent
-
-    // Re-enable transitions after positioning
-    requestAnimationFrame(() => {
-      button.style.transition = 'all 0.2s ease'
-    })
 
     return true
   }
@@ -149,25 +135,20 @@ export function useLockIcon() {
   function setupMutationObserver() {
     const debouncedPosition = debounce(positionLockButton, 100)
 
-    const triggersSelector = LOCK_ICON.SIDEBAR_TRIGGERS_SELECTOR
+    observedContainer = resolveContainer()
+    if (!observedContainer) observedContainer = document.body
 
     mutationObserver = new MutationObserver((mutations) => {
-      const shouldReposition = mutations.some(mutation =>
-        mutation.type === 'childList' &&
-        Array.from(mutation.addedNodes).some(node =>
-          node.nodeType === Node.ELEMENT_NODE && (
-            node.matches?.(triggersSelector) ||
-            node.querySelector?.(triggersSelector)
-          )
-        )
-      )
-
-      if (shouldReposition) {
-        debouncedPosition()
-      }
+      const involvesOurButton = mutations.some(m => {
+        const nodes = [...m.addedNodes, ...m.removedNodes]
+        return nodes.some(n => n?.nodeType === Node.ELEMENT_NODE && n.id === LOCK_ICON.BUTTON_ID)
+      })
+      if (involvesOurButton) return
+      const shouldReposition = mutations.some(m => m.type === 'childList')
+      if (shouldReposition) debouncedPosition()
     })
 
-    mutationObserver.observe(document.body, {
+    mutationObserver.observe(observedContainer, {
       childList: true,
       subtree: true
     })
@@ -179,23 +160,26 @@ export function useLockIcon() {
     const debouncedPosition = debounce(positionLockButton, 50)
 
     resizeObserver = new ResizeObserver(debouncedPosition)
-    resizeObserver.observe(document.body)
+    resizeObserver.observe(observedContainer || document.body)
 
-    // Also listen to window resize
+    // Also listen to window resize (kept minimal)
     const handleResize = debounce(positionLockButton, 50)
     window.addEventListener('resize', handleResize)
     cleanupFunctions.push(() => window.removeEventListener('resize', handleResize))
   }
 
-  function initLockIcon(callback) {
+  function initLockIcon(callback, options = {}) {
     if (isInitialized) return
-
     openCallback = callback
+    initOptions = {
+      ...initOptions,
+      ...options
+    }
     isInitialized = true
 
     setTimeout(() => {
       positionLockButton()
-    }, 1000)
+    }, 500)
 
     setupMutationObserver()
     setupResizeObserver()
