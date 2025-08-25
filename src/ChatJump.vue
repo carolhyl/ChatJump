@@ -101,7 +101,6 @@ import {
   ENABLE_ALL_CHATS,
   ENABLE_DELETE_TITLE,
   MAX_RECENT_CHATS, 
-  QUESTION_TITLE_MAX_LENGTH, 
   AUTO_SAVE_DELAY,
   CHAT_ROOM_URL_PATTERNS,
   USER_MESSAGE_SELECTORS,
@@ -113,13 +112,12 @@ import {
   localStorageUtils,
   recentChatIndicatorManager
 } from './utils/chatJumpUtils.js'
+import { useSavedQuestions } from './composables/useSavedQuestions.js'
 
 const questions = ref([])
-const savedQuestions = ref([])
 const showQuestionList = ref(false)
 const hoveredQuestionIndex = ref(-1)
 const activeQuestionIndex = ref(-1)
-const deletedQuestionIds = ref(new Set())
 const recentChatIds = ref([])
 
 const editingQuestionId = ref(null)
@@ -175,83 +173,18 @@ const shouldShowNavigator = computed(() => {
   const currentChatRoomId = questions.value[0]?.chatRoomId
   if (!currentChatRoomId) return false
   
-  // 使用響應式狀態檢查當前聊天室是否在最近列表中
   return recentChatIds.value.includes(currentChatRoomId)
 })
 
-const detectLanguage = (text) => {
-  for (const [lang, pattern] of Object.entries(LANGUAGE_PATTERNS)) {
-    if (pattern.test(text)) {
-      return lang
-    }
-  }
-  return 'default'
-}
-
-const truncateText = (text, customMaxLength = null) => {
-  let maxLength
-  
-  if (customMaxLength !== null) {
-    maxLength = customMaxLength
-  } else {
-    const language = detectLanguage(text)
-    maxLength = QUESTION_TITLE_MAX_LENGTH[language] || QUESTION_TITLE_MAX_LENGTH.default
-  }
-  
-  if (text.length <= maxLength) return text
-  return text.substring(0, maxLength) + '...'
-}
-
-const saveSavedQuestions = () => {
-  try {
-    localStorage.setItem('chatjump-saved-questions', JSON.stringify(savedQuestions.value))
-  } catch (error) {
-    console.error('儲存問題時出錯:', error)
-  }
-}
-
-const saveCurrentQuestion = (question) => {
-  const questionToSave = {
-    id: Date.now().toString(),
-    title: truncateText(question.text),
-    originalText: question.text,
-    timestamp: new Date().toISOString(),
-    url: window.location.href
-  }
-  
-  const existingIndex = savedQuestions.value.findIndex(q => 
-    q.originalText === question.text
-  )
-  
-  if (existingIndex !== -1) {
-    savedQuestions.value[existingIndex].timestamp = questionToSave.timestamp
-    savedQuestions.value[existingIndex].url = questionToSave.url
-  } else {
-    savedQuestions.value.unshift(questionToSave)
-  }
-  
-  saveSavedQuestions()
-}
-
-const updateQuestionTitle = (questionId, newTitle) => {
-  const question = savedQuestions.value.find(q => q.id === questionId)
-  if (question) {
-    question.title = newTitle.trim() || truncateText(question.originalText)
-    saveSavedQuestions()
-  }
-}
-
-const getDisplayTitle = (question) => {
-  const savedQuestion = savedQuestions.value.find(q => 
-    q.originalText === question.text
-  )
-  
-  if (savedQuestion && savedQuestion.title !== truncateText(question.text)) {
-    return truncateText(savedQuestion.title)
-  }
-  
-  return truncateText(question.text)
-}
+const {
+  deletedQuestionIds,
+  saveCurrentQuestion,
+  updateQuestionTitle,
+  getDisplayTitle,
+  deleteQuestionToLocalStorage,
+  ensureSavedQuestion,
+  getInitialEditTitle,
+} = useSavedQuestions()
 
 const startEditingTitle = (questionId, currentTitle, questionIndex = -1) => {
   editingQuestionId.value = questionId
@@ -268,26 +201,10 @@ const startEditingTitle = (questionId, currentTitle, questionIndex = -1) => {
 }
 
 const startEditingQuestionTitle = (question, questionIndex) => {
-  const savedQuestion = savedQuestions.value.find(q => 
-    q.originalText === question.text
-  )
-  
-  if (savedQuestion) {
-    const defaultTitle = truncateText(question.text)
-    const titleToEdit = savedQuestion.title !== defaultTitle 
-      ? savedQuestion.title 
-      : question.text
-    startEditingTitle(savedQuestion.id, titleToEdit, questionIndex)
-  } else {
-    saveCurrentQuestion(question)
-    nextTick(() => {
-      const newSavedQuestion = savedQuestions.value.find(q => 
-        q.originalText === question.text
-      )
-      if (newSavedQuestion) {
-        startEditingTitle(newSavedQuestion.id, question.text, questionIndex)
-      }
-    })
+  const saved = ensureSavedQuestion(question)
+  const titleToEdit = getInitialEditTitle(question)
+  if (saved) {
+    startEditingTitle(saved.id, titleToEdit, questionIndex)
   }
 }
 
@@ -310,19 +227,11 @@ const cancelEditingTitle = () => {
 }
 
 const deleteQuestion = (questionId) => {
-  deletedQuestionIds.value.add(questionId)
-  
-  const updatedSavedQuestions = savedQuestions.value.filter(question => question.id !== questionId)
-  savedQuestions.value = updatedSavedQuestions
-  saveSavedQuestions()
-  
-
+  deleteQuestionToLocalStorage(questionId)
   const questionIndex = questions.value.findIndex(question => question.id === questionId)
   if (questionIndex !== -1) {
     questions.value = questions.value.filter((_, index) => index !== questionIndex)
   }
-  
-  localStorage.setItem('chatjump-deleted-questions', JSON.stringify([...deletedQuestionIds.value]))
 }
 
 const handleInlineKeydown = (event) => {

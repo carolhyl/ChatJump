@@ -5,7 +5,33 @@ import {
     DEFAULT_ADD_INDICATOR_CLASS,
     MAX_RECENT_CHATS,
     ADD_CLICK_DETECTION_CONFIG,
+    LANGUAGE_PATTERNS,
+    QUESTION_TITLE_MAX_LENGTH,
 } from '../constant/config.js'
+
+export const detectLanguage = (text) => {
+    for (const [lang, pattern] of Object.entries(LANGUAGE_PATTERNS)) {
+      if (pattern.test(text)) {
+        return lang
+      }
+    }
+    return 'default'
+}
+  
+export const truncateText = (text, customMaxLength = null) => {
+    let maxLength
+
+    if (customMaxLength !== null) {
+        maxLength = customMaxLength
+    } else {
+        const language = detectLanguage(text)
+        maxLength = QUESTION_TITLE_MAX_LENGTH[language] || QUESTION_TITLE_MAX_LENGTH.default
+    }
+
+    if (text.length <= maxLength) return text
+    return text.substring(0, maxLength) + '...'
+}
+
 
 /**
  * Debounce function
