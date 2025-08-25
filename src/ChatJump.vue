@@ -103,8 +103,6 @@ import {
   MAX_RECENT_CHATS, 
   AUTO_SAVE_DELAY,
   CHAT_ROOM_URL_PATTERNS,
-  USER_MESSAGE_SELECTORS,
-  LANGUAGE_PATTERNS,
   ADD_CLICK_DETECTION_CONFIG
 } from './constant/config.js'
 import { 
@@ -113,11 +111,10 @@ import {
   recentChatIndicatorManager
 } from './utils/chatJumpUtils.js'
 import { useSavedQuestions } from './composables/useSavedQuestions.js'
+import { useDetectQuestions } from './composables/useDetectQuestions.js'
 
-const questions = ref([])
 const showQuestionList = ref(false)
 const hoveredQuestionIndex = ref(-1)
-const activeQuestionIndex = ref(-1)
 const recentChatIds = ref([])
 
 const editingQuestionId = ref(null)
@@ -127,10 +124,25 @@ let autoSaveTimer = null
 
 let observer = null
 let scrollObserver = null
-let lastScrollY = 0
-let lastScrollTime = 0
 
 const lockDialogManager = new LockDialogManager()
+
+const {
+  questions,
+  activeQuestionIndex,
+  extractUserQuestions,
+  detectActiveQuestion,
+  scrollToQuestion,
+  setupIntersectionObserver,
+} = useDetectQuestions()
+
+const {
+  updateQuestionTitle,
+  getDisplayTitle,
+  deleteQuestionToLocalStorage,
+  ensureSavedQuestion,
+  getInitialEditTitle,
+} = useSavedQuestions()
 
 const applyTheme = (theme) => {
   const root = document.documentElement
@@ -175,16 +187,6 @@ const shouldShowNavigator = computed(() => {
   
   return recentChatIds.value.includes(currentChatRoomId)
 })
-
-const {
-  deletedQuestionIds,
-  saveCurrentQuestion,
-  updateQuestionTitle,
-  getDisplayTitle,
-  deleteQuestionToLocalStorage,
-  ensureSavedQuestion,
-  getInitialEditTitle,
-} = useSavedQuestions()
 
 const startEditingTitle = (questionId, currentTitle, questionIndex = -1) => {
   editingQuestionId.value = questionId
@@ -313,214 +315,20 @@ const addRecentChatIndicators = () => {
   syncRecentChatIds()
 }
 
-const detectActiveQuestion = () => {
-  const currentTime = Date.now()
-  const currentScrollY = window.scrollY
+let scrollTimeout = null
+const directScrollHandler = () => {
+  detectActiveQuestion()
   
-  const scrollVelocity = Math.abs(currentScrollY - lastScrollY) / Math.max(currentTime - lastScrollTime, 1)
-  lastScrollY = currentScrollY
-  lastScrollTime = currentTime
-  
-  const viewportHeight = window.innerHeight
-  const scrollTop = window.scrollY
-  const viewportCenter = scrollTop + viewportHeight / 2
-  
-  let closestIndex = -1
-  let closestDistance = Infinity
-  
-  questions.value.forEach((question, index) => {
-    if (question.element) {
-      const rect = question.element.getBoundingClientRect()
-      const elementTop = rect.top + scrollTop
-      const elementCenter = elementTop + rect.height / 2
-      
-      // 計算元素中心點與視窗中心點的距離
-      const distance = Math.abs(elementCenter - viewportCenter)
-      // 檢查元素是否在視窗內
-      const isInViewport = rect.top < viewportHeight && rect.bottom > 0
-      // 快速滾動時放寬檢測範圍
-      const isValidCandidate = scrollVelocity > 2 ? 
-        (rect.top < viewportHeight * 1.2 && rect.bottom > -viewportHeight * 0.2) : 
-        isInViewport
-      
-      if (isValidCandidate && distance < closestDistance) {
-        closestDistance = distance
-        closestIndex = index
-      }
-    }
-  })
-  
-  const previousActiveIndex = activeQuestionIndex.value
-  
-  if (closestIndex !== -1) {
-    activeQuestionIndex.value = closestIndex
-  } else {
-    if (questions.value.length > 0 && activeQuestionIndex.value === -1) {
-      activeQuestionIndex.value = questions.value.length - 1
-    }
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
   }
-  
-  if (previousActiveIndex !== activeQuestionIndex.value) {
-    // Active question changed
-  }
-}
-
-const scrollToQuestion = (element) => {
-  if (element) {
+  scrollTimeout = setTimeout(() => {
     detectActiveQuestion()
-    
-    element.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'center' 
-    })
-    
-    const scrollCheckInterval = setInterval(() => {
-      detectActiveQuestion()
-    }, 50)
-    
-    setTimeout(() => {
-      clearInterval(scrollCheckInterval)
-      detectActiveQuestion()
-    }, 1000)
-    
-    element.style.transition = 'background-color 0.5s ease'
-    element.style.backgroundColor = '#FAF3EC'
-    setTimeout(() => {
-      element.style.backgroundColor = ''
-    }, 2000)
-  }
-}
-
-const extractUserQuestions = () => {
-  
-  const foundQuestions = []
-  
-  const getCurrentChatRoomId = () => {
-    const url = window.location.href
-    
-    for (const pattern of CHAT_ROOM_URL_PATTERNS) {
-      const match = url.match(pattern)
-      if (match && match[1]) {
-        return match[1]
-      }
-    }
-    
-    // 如果 URL 中沒有找到，使用 pathname 作為備用 ID
-    const pathname = window.location.pathname
-    if (pathname && pathname !== '/') {
-      return pathname.replace(/[^a-zA-Z0-9-]/g, '-').replace(/^-+|-+$/g, '')
-    }
-    
-    return 'default-chat'
-  }
-  
-  const currentChatRoomId = getCurrentChatRoomId()
-  
-  USER_MESSAGE_SELECTORS.forEach(selector => {
-    try {
-      const elements = document.querySelectorAll(selector)
-      
-      elements.forEach((element, _index) => {
-        let questionText = ''
-        
-        const preWrapContainer = element.querySelector('.whitespace-pre-wrap')
-        if (preWrapContainer && preWrapContainer.textContent.trim()) {
-          questionText = preWrapContainer.textContent.trim()
-        }
-        
-        if (!questionText) {
-          const bubbleContainer = element.querySelector('.user-message-bubble-color')
-          if (bubbleContainer && bubbleContainer.textContent.trim()) {
-            questionText = bubbleContainer.textContent.trim()
-          }
-        }
-        
-        if (!questionText) {
-          const messageContainer = element.querySelector('[data-message-author-role="user"]')
-          if (messageContainer) {
-            const textDiv = messageContainer.querySelector('.whitespace-pre-wrap')
-            if (textDiv && textDiv.textContent.trim()) {
-              questionText = textDiv.textContent.trim()
-            }
-          }
-        }
-        
-        if (!questionText && element.textContent && element.textContent.trim()) {
-          questionText = element.textContent.trim()
-          questionText = questionText.replace(/複製|編輯訊息|你說：/g, '').trim()
-        }
-        
-        if (!questionText) {
-          const textContainers = element.querySelectorAll('div, p, span')
-          textContainers.forEach(container => {
-            const text = container.textContent?.trim()
-            if (text && text.length > questionText.length && text.length < 1000) {
-              if (!text.match(/複製|編輯訊息|你說：|aria-label|data-testid/)) {
-                questionText = text
-              }
-            }
-          })
-        }
-        
-        if (questionText && 
-            !questionText.includes('ChatGPT') &&
-            !questionText.includes('OpenAI')) {
-          
-          const questionId = `user-question-${foundQuestions.length}`
-          element.id = questionId
-          
-          foundQuestions.push({
-            text: questionText,
-            element: element,
-            id: questionId,
-            index: foundQuestions.length,
-            chatRoomId: currentChatRoomId,
-            timestamp: Date.now()
-          })
-          
-        }
-      })
-    } catch (error) {
-      console.error(`Error occurred while processing selector "${selector}":`, error)
-    }
-  })
-  
-  const uniqueQuestions = []
-  const seenTexts = new Set()
-  
-  foundQuestions.forEach(q => {
-    const normalizedText = q.text.toLowerCase().replace(/\s+/g, ' ').trim()
-    // Skip questions that have been deleted
-    if (!seenTexts.has(normalizedText) && !deletedQuestionIds.value.has(q.id)) {
-      seenTexts.add(normalizedText)
-      uniqueQuestions.push(q)
-    }
-  })
-  
-  questions.value = uniqueQuestions
-  
-  if (uniqueQuestions.length > 0) {
-    detectActiveQuestion()
-    
-    if (activeQuestionIndex.value === -1) {
-      const latestQuestionIndex = uniqueQuestions.length - 1
-      activeQuestionIndex.value = latestQuestionIndex
-    }
-    
-    // 自動儲存最新的問題（如果有的話）
-    if (uniqueQuestions.length > 0) {
-      const latestQuestion = uniqueQuestions[uniqueQuestions.length - 1]
-      saveCurrentQuestion(latestQuestion)
-    }
-  }
+  }, 100)
 }
 
 onMounted(() => {
   initTheme()
-  // const storageHandler = (e) => {
-  //   if (e.key === 'theme') initTheme()
-  // }
-  // window.addEventListener('storage', storageHandler)
 
   extractUserQuestions()
   
@@ -547,49 +355,10 @@ onMounted(() => {
     }, 500)
   }, 1000)
   
-  const handleScroll = () => {
-    detectActiveQuestion()
-  }
-  
-  let intersectionObserver = null
-  const setupIntersectionObserver = () => {
-    if (intersectionObserver) {
-      intersectionObserver.disconnect()
-    }
-    
-    intersectionObserver = new IntersectionObserver((_entries) => {
-      detectActiveQuestion()
-    }, {
-      root: null,
-      rootMargin: '0px',
-      threshold: [0, 0.1, 0.5, 0.9, 1.0]
-    })
-    
-    questions.value.forEach(question => {
-      if (question.element) {
-        intersectionObserver.observe(question.element)
-      }
-    })
-  }
-  
-  let scrollTimeout = null
-  const directScrollHandler = () => {
-    detectActiveQuestion()
-    
-    if (scrollTimeout) {
-      clearTimeout(scrollTimeout)
-    }
-    scrollTimeout = setTimeout(() => {
-      detectActiveQuestion()
-    }, 100)
-  }
-  
   window.addEventListener('scroll', directScrollHandler, { passive: true })
-  window.addEventListener('resize', handleScroll)
+  window.addEventListener('resize', detectActiveQuestion)
   
   const debouncedUpdateIndicators = debounce(addRecentChatIndicators, 300)
-  // start lock icon manager
-  // lockIcon.start()
   
   observer = new MutationObserver((mutations) => {
     let shouldUpdateQuestions = false
@@ -642,13 +411,7 @@ onMounted(() => {
     subtree: true
   })
   
-  scrollObserver = { directScrollHandler, intersectionObserver }
-  // Cleanup listeners on unmount
-  onBeforeUnmount(() => {
-    window.removeEventListener('storage', storageHandler)
-    window.removeEventListener('chatjump-theme-change', sameTabHandler)
-    teardownSystemListener?.()
-  })
+  scrollObserver = { directScrollHandler }
 })
 
 onUnmounted(() => {
@@ -657,9 +420,6 @@ onUnmounted(() => {
   }
   if (scrollObserver) {
     window.removeEventListener('scroll', scrollObserver.directScrollHandler)
-    if (scrollObserver.intersectionObserver) {
-      scrollObserver.intersectionObserver.disconnect()
-    }
     window.removeEventListener('resize', detectActiveQuestion)
   }
 })

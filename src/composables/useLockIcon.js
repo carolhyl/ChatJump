@@ -113,9 +113,7 @@ export function useLockIcon() {
 
   function positionLockButton() {
     const chatTitle = findChatTitle()
-    console.log('[useLockIcon] findChatTitle result:', chatTitle)
     if (!chatTitle) {
-      console.log('[useLockIcon] No chat title found')
       return false
     }
 
@@ -124,7 +122,6 @@ export function useLockIcon() {
 
     // For better visibility, attach directly to the h2 title element
     const parent = chatTitle.parentElement || chatTitle
-    console.log('[useLockIcon] Parent element:', parent)
 
     // Ensure parent has relative positioning
     if (getComputedStyle(parent).position === 'static') {
