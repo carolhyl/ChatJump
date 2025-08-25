@@ -20,7 +20,6 @@
               v-for="(question, index) in questions" 
               :key="index"
               class="chat-jump-nav-item"
-              @click="scrollToQuestion(question.element)"
             >
               <div class="chat-jump-nav-icon">
                 <div 
@@ -53,20 +52,19 @@
               v-if="editingQuestionIndex !== index"
               class="chat-jump-question-title"
               @dblclick="startEditingQuestionTitle(question, index)"
-              title="double click to edit"
+              title="Double click to edit"
             >
               {{ getDisplayTitle(question) }}
             </div>
             <input 
               v-else
+              ref="inlineInput"
               v-model="editingTitle"
               class="chat-jump-inline-input"
               @keydown="handleInlineKeydown"
               @input="handleInlineInput"
               @blur="saveEditingTitle"
               @click.stop
-              ref="inlineInput"
-              maxlength="300"
             />
           </div>
           <div 
@@ -96,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onBeforeUnmount, nextTick, useTemplateRef } from 'vue'
 import LockDialogManager from './model/LockDialogManager.js'
 import { useLockIcon } from './composables/useLockIcon'
 import { 
@@ -261,10 +259,10 @@ const startEditingTitle = (questionId, currentTitle, questionIndex = -1) => {
   editingTitle.value = currentTitle
   
   nextTick(() => {
-    const input = document.querySelector('.chat-jump-inline-input')
-    if (input) {
-      input.focus()
-      input.select()
+    const inputRef = useTemplateRef('inlineInput')
+    if (inputRef.value) {
+      inputRef.value.focus()
+      inputRef.value.select()
     }
   })
 }
