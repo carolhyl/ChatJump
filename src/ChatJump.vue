@@ -100,22 +100,22 @@ import { useLockIcon } from './composables/useLockIcon'
 import { 
   ENABLE_ALL_CHATS,
   ENABLE_DELETE_TITLE,
-  MAX_RECENT_CHATS, 
   AUTO_SAVE_DELAY,
-  CHAT_ROOM_URL_PATTERNS,
-  ADD_CLICK_DETECTION_CONFIG
 } from './constant/config.js'
-import { 
-  debounce,
-  localStorageUtils,
-  recentChatIndicatorManager
-} from './utils/chatJumpUtils.js'
+import { debounce } from './utils/chatJumpUtils.js'
 import { useSavedQuestions } from './composables/useSavedQuestions.js'
+import { useRecentChats } from './composables/useRecentChats.js'
 import { useDetectQuestions } from './composables/useDetectQuestions.js'
 
 const showQuestionList = ref(false)
 const hoveredQuestionIndex = ref(-1)
-const recentChatIds = ref([])
+
+// recent chats state & actions from composable
+const {
+  recentChatIds,
+  initRecentChats,
+  refreshIndicators,
+} = useRecentChats()
 
 const editingQuestionId = ref(null)
 const editingQuestionIndex = ref(-1)
@@ -256,75 +256,14 @@ const handleInlineInput = () => {
   }, AUTO_SAVE_DELAY)
 }
 
-const syncRecentChatIds = () => {
-  const currentIds = localStorageUtils.getRecentChatIds('chatjump-recent-chats')
-  recentChatIds.value = currentIds
-}
 
-const removeRecentChat = (chatId) => {
-  recentChatIndicatorManager.removeChat(chatId, {
-    removeCallback: removeRecentChat,
-    addCallback: addRecentChat
-  })
-  
-  syncRecentChatIds()
-}
-
-const addRecentChat = (chatId, title, href) => {
-  const success = recentChatIndicatorManager.addChat(chatId, title, href, {
-    removeCallback: removeRecentChat,
-    addCallback: addRecentChat
-  })
-  
-  if (success) {
-    syncRecentChatIds()
-    
-    // 獲取當前聊天室 ID
-    const getCurrentChatRoomId = () => {
-      const url = window.location.href
-      for (const pattern of CHAT_ROOM_URL_PATTERNS) {
-        const match = url.match(pattern)
-        if (match && match[1]) {
-          return match[1]
-        }
-      }
-      return null
-    }
-    
-    const currentChatRoomId = getCurrentChatRoomId()
-    
-    // 如果成功添加了當前聊天室，重新提取問題並啟用導航
-    if (chatId === currentChatRoomId) {
-      // 重新提取問題以確保導航功能正常工作
-      setTimeout(() => {
-        extractUserQuestions()
-      }, ADD_CLICK_DETECTION_CONFIG.NAVIGATOR_ENABLE_DELAY)
-    }
-  }
-  
-  return success
-}
-
-const addRecentChatIndicators = () => {
-  recentChatIndicatorManager.addIndicators({
-    storageKey: 'chatjump-recent-chats',
-    removeCallback: removeRecentChat,
-    addCallback: addRecentChat
-  })
-  
-  syncRecentChatIds()
-}
-
-let scrollTimeout = null
+let detectRafId = null
 const directScrollHandler = () => {
-  detectActiveQuestion()
-  
-  if (scrollTimeout) {
-    clearTimeout(scrollTimeout)
-  }
-  scrollTimeout = setTimeout(() => {
+  if (detectRafId !== null) return
+  detectRafId = requestAnimationFrame(() => {
     detectActiveQuestion()
-  }, 100)
+    detectRafId = null
+  })
 }
 
 onMounted(() => {
@@ -335,13 +274,10 @@ onMounted(() => {
   setTimeout(() => {
     setupIntersectionObserver()
     detectActiveQuestion()
-    
-    localStorageUtils.autoPopulateIfEmpty(MAX_RECENT_CHATS, 'chatjump-recent-chats')
-    
-    syncRecentChatIds()
-    
-    addRecentChatIndicators()
-    
+
+    // init recent chats indicators and ids
+    initRecentChats(extractUserQuestions)
+
     const { initLockIcon } = useLockIcon()
     initLockIcon((lockButton) => {
       lockDialogManager.open(lockButton)
@@ -358,7 +294,7 @@ onMounted(() => {
   window.addEventListener('scroll', directScrollHandler, { passive: true })
   window.addEventListener('resize', detectActiveQuestion)
   
-  const debouncedUpdateIndicators = debounce(addRecentChatIndicators, 300)
+  const debouncedUpdateIndicators = debounce(() => refreshIndicators(extractUserQuestions), 300)
   
   observer = new MutationObserver((mutations) => {
     let shouldUpdateQuestions = false
