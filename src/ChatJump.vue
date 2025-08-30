@@ -100,25 +100,19 @@ import { useLockIcon } from './composables/useLockIcon'
 import { 
   ENABLE_ALL_CHATS,
   ENABLE_DELETE_TITLE,
-  MAX_RECENT_CHATS, 
   AUTO_SAVE_DELAY,
-  CHAT_ROOM_URL_PATTERNS,
   USER_MESSAGE_SELECTORS,
-  LANGUAGE_PATTERNS,
-  ADD_CLICK_DETECTION_CONFIG
 } from './constant/config.js'
 import { 
   debounce,
-  localStorageUtils,
-  recentChatIndicatorManager
 } from './utils/chatJumpUtils.js'
 import { useSavedQuestions } from './composables/useSavedQuestions.js'
+import { useRecentChats } from './composables/useRecentChats.js'
 
 const questions = ref([])
 const showQuestionList = ref(false)
 const hoveredQuestionIndex = ref(-1)
 const activeQuestionIndex = ref(-1)
-const recentChatIds = ref([])
 
 const editingQuestionId = ref(null)
 const editingQuestionIndex = ref(-1)
@@ -131,6 +125,23 @@ let lastScrollY = 0
 let lastScrollTime = 0
 
 const lockDialogManager = new LockDialogManager()
+
+const {
+  recentChatIds,
+  initRecentChats,
+  refreshIndicators,
+  getCurrentChatRoomId,
+} = useRecentChats()
+
+const {
+  deletedQuestionIds,
+  saveCurrentQuestion,
+  updateQuestionTitle,
+  getDisplayTitle,
+  deleteQuestionToLocalStorage,
+  ensureSavedQuestion,
+  getInitialEditTitle,
+} = useSavedQuestions()
 
 const applyTheme = (theme) => {
   const root = document.documentElement
@@ -175,16 +186,6 @@ const shouldShowNavigator = computed(() => {
   
   return recentChatIds.value.includes(currentChatRoomId)
 })
-
-const {
-  deletedQuestionIds,
-  saveCurrentQuestion,
-  updateQuestionTitle,
-  getDisplayTitle,
-  deleteQuestionToLocalStorage,
-  ensureSavedQuestion,
-  getInitialEditTitle,
-} = useSavedQuestions()
 
 const startEditingTitle = (questionId, currentTitle, questionIndex = -1) => {
   editingQuestionId.value = questionId
@@ -252,65 +253,6 @@ const handleInlineInput = () => {
   autoSaveTimer = setTimeout(() => {
     saveEditingTitle()
   }, AUTO_SAVE_DELAY)
-}
-
-const syncRecentChatIds = () => {
-  const currentIds = localStorageUtils.getRecentChatIds('chatjump-recent-chats')
-  recentChatIds.value = currentIds
-}
-
-const removeRecentChat = (chatId) => {
-  recentChatIndicatorManager.removeChat(chatId, {
-    removeCallback: removeRecentChat,
-    addCallback: addRecentChat
-  })
-  
-  syncRecentChatIds()
-}
-
-const addRecentChat = (chatId, title, href) => {
-  const success = recentChatIndicatorManager.addChat(chatId, title, href, {
-    removeCallback: removeRecentChat,
-    addCallback: addRecentChat
-  })
-  
-  if (success) {
-    syncRecentChatIds()
-    
-    // 獲取當前聊天室 ID
-    const getCurrentChatRoomId = () => {
-      const url = window.location.href
-      for (const pattern of CHAT_ROOM_URL_PATTERNS) {
-        const match = url.match(pattern)
-        if (match && match[1]) {
-          return match[1]
-        }
-      }
-      return null
-    }
-    
-    const currentChatRoomId = getCurrentChatRoomId()
-    
-    // 如果成功添加了當前聊天室，重新提取問題並啟用導航
-    if (chatId === currentChatRoomId) {
-      // 重新提取問題以確保導航功能正常工作
-      setTimeout(() => {
-        extractUserQuestions()
-      }, ADD_CLICK_DETECTION_CONFIG.NAVIGATOR_ENABLE_DELAY)
-    }
-  }
-  
-  return success
-}
-
-const addRecentChatIndicators = () => {
-  recentChatIndicatorManager.addIndicators({
-    storageKey: 'chatjump-recent-chats',
-    removeCallback: removeRecentChat,
-    addCallback: addRecentChat
-  })
-  
-  syncRecentChatIds()
 }
 
 const detectActiveQuestion = () => {
@@ -394,25 +336,6 @@ const scrollToQuestion = (element) => {
 const extractUserQuestions = () => {
   
   const foundQuestions = []
-  
-  const getCurrentChatRoomId = () => {
-    const url = window.location.href
-    
-    for (const pattern of CHAT_ROOM_URL_PATTERNS) {
-      const match = url.match(pattern)
-      if (match && match[1]) {
-        return match[1]
-      }
-    }
-    
-    // 如果 URL 中沒有找到，使用 pathname 作為備用 ID
-    const pathname = window.location.pathname
-    if (pathname && pathname !== '/') {
-      return pathname.replace(/[^a-zA-Z0-9-]/g, '-').replace(/^-+|-+$/g, '')
-    }
-    
-    return 'default-chat'
-  }
   
   const currentChatRoomId = getCurrentChatRoomId()
   
@@ -517,10 +440,6 @@ const extractUserQuestions = () => {
 
 onMounted(() => {
   initTheme()
-  // const storageHandler = (e) => {
-  //   if (e.key === 'theme') initTheme()
-  // }
-  // window.addEventListener('storage', storageHandler)
 
   extractUserQuestions()
   
@@ -528,12 +447,8 @@ onMounted(() => {
     setupIntersectionObserver()
     detectActiveQuestion()
     
-    localStorageUtils.autoPopulateIfEmpty(MAX_RECENT_CHATS, 'chatjump-recent-chats')
-    
-    syncRecentChatIds()
-    
-    addRecentChatIndicators()
-    
+    initRecentChats(extractUserQuestions)
+
     const { initLockIcon } = useLockIcon()
     initLockIcon((lockButton) => {
       lockDialogManager.open(lockButton)
@@ -587,9 +502,7 @@ onMounted(() => {
   window.addEventListener('scroll', directScrollHandler, { passive: true })
   window.addEventListener('resize', handleScroll)
   
-  const debouncedUpdateIndicators = debounce(addRecentChatIndicators, 300)
-  // start lock icon manager
-  // lockIcon.start()
+  const debouncedUpdateIndicators = debounce(() => refreshIndicators(extractUserQuestions), 300)
   
   observer = new MutationObserver((mutations) => {
     let shouldUpdateQuestions = false
