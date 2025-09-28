@@ -1,6 +1,6 @@
-import js from '@eslint/js'
-import pluginVue from 'eslint-plugin-vue'
-import pluginHtml from 'eslint-plugin-html'
+import js from '@eslint/js';
+import pluginVue from 'eslint-plugin-vue';
+import pluginHtml from 'eslint-plugin-html';
 
 export default [
   js.configs.recommended,
@@ -14,15 +14,14 @@ export default [
       ecmaVersion: 2022,
       sourceType: 'module',
       globals: {
-        // Browser globals
         window: 'readonly',
         document: 'readonly',
         console: 'readonly',
-        
+
         // Chrome Extension APIs
         chrome: 'readonly',
         browser: 'readonly',
-        
+
         // Node.js globals for build scripts
         process: 'readonly',
         __dirname: 'readonly',
@@ -31,14 +30,14 @@ export default [
         require: 'readonly',
         exports: 'readonly',
         global: 'readonly',
-        
+
         // Additional browser globals
         alert: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
-        
+
         // Browser APIs
         IntersectionObserver: 'readonly',
         MutationObserver: 'readonly',
@@ -47,9 +46,9 @@ export default [
     },
     rules: {
       // JavaScript rules
-      'no-unused-vars': ['error', { 
+      'no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_' 
+        varsIgnorePattern: '^_'
       }],
       'no-console': 'warn',
       'no-debugger': 'error',
@@ -60,9 +59,9 @@ export default [
       'brace-style': ['error', '1tbs'],
       'indent': ['error', 2],
       'quotes': ['error', 'single'],
-      'semi': ['error', 'never'],
+      'semi': ['error', 'always'],
       'comma-dangle': ['error', 'never'],
-      
+
       // Vue specific rules
       'vue/multi-word-component-names': 'off',
       'vue/no-unused-vars': 'error',
@@ -113,4 +112,4 @@ export default [
       'coverage/**'
     ]
   }
-]
+];

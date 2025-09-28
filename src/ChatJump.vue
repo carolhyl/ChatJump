@@ -65,7 +65,7 @@
               @input="handleInlineInput"
               @blur="saveEditingTitle"
               @click.stop
-            />
+            >
           </div>
           <div 
             v-if="hoveredQuestionIndex === index && editingQuestionIndex !== index"
@@ -73,7 +73,11 @@
             @click.stop="startEditingQuestionTitle(question, index)"
             title="編輯標題"
           >
-            <svg width="10" height="12" viewBox="0 0 10 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="10"
+                 height="12"
+                 viewBox="0 0 10 12"
+                 fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
               <path d="M5.54549 0.0909081C5.68451 0.0910623 5.81823 0.144297 5.91932 0.239734C6.02042 0.335172 6.08125 0.46561 6.0894 0.604396C6.09755 0.743182 6.05239 0.879842 5.96316 0.986453C5.87393 1.09306 5.74736 1.16158 5.60931 1.178L5.54549 1.18182H1.18185V8.81818H8.81821V4.45454C8.81837 4.31552 8.8716 4.1818 8.96704 4.08071C9.06248 3.97961 9.19292 3.91878 9.3317 3.91063C9.47049 3.90248 9.60715 3.94764 9.71376 4.03687C9.82037 4.1261 9.88889 4.25267 9.9053 4.39073L9.90912 4.45454V8.81818C9.90921 9.0934 9.80527 9.35849 9.61812 9.5603C9.43098 9.7621 9.17448 9.88572 8.90003 9.90636L8.81821 9.90909H1.18185C0.906628 9.90918 0.641542 9.80523 0.439734 9.61809C0.237926 9.43095 0.114312 9.17445 0.0936698 8.9L0.0909424 8.81818V1.18182C0.0908553 0.906594 0.1948 0.641508 0.381941 0.4397C0.569081 0.237892 0.825585 0.114277 1.10003 0.0936354L1.18185 0.0909081H5.54549ZM8.95076 0.277999C9.04892 0.180173 9.18063 0.123377 9.31915 0.119147C9.45767 0.114917 9.5926 0.163571 9.69655 0.255226C9.80049 0.34688 9.86565 0.474663 9.8788 0.612621C9.89194 0.750579 9.85208 0.888367 9.76731 0.997999L9.72203 1.04982L4.32203 6.44927C4.22387 6.5471 4.09216 6.60389 3.95364 6.60812C3.81512 6.61235 3.68019 6.5637 3.57624 6.47204C3.4723 6.38039 3.40714 6.25261 3.394 6.11465C3.38086 5.97669 3.42072 5.8389 3.50549 5.72927L3.55076 5.678L8.95076 0.277999Z" fill="#9E9E9E"/>
             </svg>
           </div>
@@ -83,8 +87,15 @@
             @click.stop="deleteQuestion(question.id)"
             title="刪除問題"
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 1L11 11M1 11L11 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <svg width="12"
+                 height="12"
+                 viewBox="0 0 12 12"
+                 fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 1L11 11M1 11L11 1"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"/>
             </svg>
           </div>
         </div>
@@ -94,44 +105,44 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, onBeforeUnmount, nextTick, useTemplateRef } from 'vue'
-import LockDialogManager from './model/LockDialogManager.js'
-import { useLockIcon } from './composables/useLockIcon'
+import { ref, computed, onMounted, onUnmounted, onBeforeUnmount, nextTick, useTemplateRef } from 'vue';
+import LockDialogManager from './model/LockDialogManager.js';
+import { useLockIcon } from './composables/useLockIcon';
 import { 
   ENABLE_ALL_CHATS,
   ENABLE_DELETE_TITLE,
   AUTO_SAVE_DELAY,
-  USER_MESSAGE_SELECTORS,
-} from './constant/config.js'
+  USER_MESSAGE_SELECTORS
+} from './constant/config.js';
 import { 
-  debounce,
-} from './utils/chatJumpUtils.js'
-import { useSavedQuestions } from './composables/useSavedQuestions.js'
-import { useRecentChats } from './composables/useRecentChats.js'
+  debounce
+} from './utils/utils.js';
+import { useSavedQuestions } from './composables/useSavedQuestions.js';
+import { useRecentChats } from './composables/useRecentChats.js';
 
-const questions = ref([])
-const showQuestionList = ref(false)
-const hoveredQuestionIndex = ref(-1)
-const activeQuestionIndex = ref(-1)
+const questions = ref([]);
+const showQuestionList = ref(false);
+const hoveredQuestionIndex = ref(-1);
+const activeQuestionIndex = ref(-1);
 
-const editingQuestionId = ref(null)
-const editingQuestionIndex = ref(-1)
-const editingTitle = ref('')
-let autoSaveTimer = null
+const editingQuestionId = ref(null);
+const editingQuestionIndex = ref(-1);
+const editingTitle = ref('');
+let autoSaveTimer = null;
 
-let observer = null
-let scrollObserver = null
-let lastScrollY = 0
-let lastScrollTime = 0
+let observer = null;
+let scrollObserver = null;
+let lastScrollY = 0;
+let lastScrollTime = 0;
 
-const lockDialogManager = new LockDialogManager()
+const lockDialogManager = new LockDialogManager();
 
 const {
   recentChatIds,
   initRecentChats,
   refreshIndicators,
-  getCurrentChatRoomId,
-} = useRecentChats()
+  getCurrentChatRoomId
+} = useRecentChats();
 
 const {
   deletedQuestionIds,
@@ -140,30 +151,30 @@ const {
   getDisplayTitle,
   deleteQuestionToLocalStorage,
   ensureSavedQuestion,
-  getInitialEditTitle,
-} = useSavedQuestions()
+  getInitialEditTitle
+} = useSavedQuestions();
 
 const applyTheme = (theme) => {
-  const root = document.documentElement
-  root.classList.remove('theme-light', 'theme-dark')
+  const root = document.documentElement;
+  root.classList.remove('theme-light', 'theme-dark');
   if (!theme) {
-    return
+    return;
   }
   
-  theme === 'light' ? root.classList.add('theme-light') : root.classList.add('theme-dark')
-}
+  theme === 'light' ? root.classList.add('theme-light') : root.classList.add('theme-dark');
+};
 
 const getStoredTheme = () => {
   try {
-    return localStorage.getItem('theme')
+    return localStorage.getItem('theme');
   } catch {
-    return null
+    return null;
   }
-}
+};
 
 const initTheme = () => {
   try {
-    const theme = getStoredTheme()
+    const theme = getStoredTheme();
 
     if(!theme) {
       const media = window.matchMedia?.('(prefers-color-scheme: dark)');
@@ -172,225 +183,231 @@ const initTheme = () => {
     }
     applyTheme(theme);
   } catch {
-    applyTheme(null)
+    applyTheme(null);
   }
-}
+};
 
 const shouldShowNavigator = computed(() => {
-  if (questions.value.length === 0) return false
+  if (questions.value.length === 0) {
+    return false;
+  }
   
-  if (ENABLE_ALL_CHATS) return true
+  if (ENABLE_ALL_CHATS) {
+    return true;
+  }
   
-  const currentChatRoomId = questions.value[0]?.chatRoomId
-  if (!currentChatRoomId) return false
+  const currentChatRoomId = questions.value[0]?.chatRoomId;
+  if (!currentChatRoomId) {
+    return false;
+  }
   
-  return recentChatIds.value.includes(currentChatRoomId)
-})
+  return recentChatIds.value.includes(currentChatRoomId);
+});
 
 const startEditingTitle = (questionId, currentTitle, questionIndex = -1) => {
-  editingQuestionId.value = questionId
-  editingQuestionIndex.value = questionIndex
-  editingTitle.value = currentTitle
+  editingQuestionId.value = questionId;
+  editingQuestionIndex.value = questionIndex;
+  editingTitle.value = currentTitle;
   
   nextTick(() => {
-    const inputRef = useTemplateRef('inlineInput')
+    const inputRef = useTemplateRef('inlineInput');
     if (inputRef.value) {
-      inputRef.value.focus()
-      inputRef.value.select()
+      inputRef.value.focus();
+      inputRef.value.select();
     }
-  })
-}
+  });
+};
 
 const startEditingQuestionTitle = (question, questionIndex) => {
-  const saved = ensureSavedQuestion(question)
-  const titleToEdit = getInitialEditTitle(question)
+  const saved = ensureSavedQuestion(question);
+  const titleToEdit = getInitialEditTitle(question);
   if (saved) {
-    startEditingTitle(saved.id, titleToEdit, questionIndex)
+    startEditingTitle(saved.id, titleToEdit, questionIndex);
   }
-}
+};
 
 const saveEditingTitle = () => {
   if (editingQuestionId.value && editingTitle.value.trim()) {
-    updateQuestionTitle(editingQuestionId.value, editingTitle.value)
+    updateQuestionTitle(editingQuestionId.value, editingTitle.value);
   }
-  cancelEditingTitle()
-}
+  cancelEditingTitle();
+};
 
 const cancelEditingTitle = () => {
-  editingQuestionId.value = null
-  editingQuestionIndex.value = -1
-  editingTitle.value = ''
+  editingQuestionId.value = null;
+  editingQuestionIndex.value = -1;
+  editingTitle.value = '';
   
   if (autoSaveTimer) {
-    clearTimeout(autoSaveTimer)
-    autoSaveTimer = null
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = null;
   }
-}
+};
 
 const deleteQuestion = (questionId) => {
-  deleteQuestionToLocalStorage(questionId)
-  const questionIndex = questions.value.findIndex(question => question.id === questionId)
+  deleteQuestionToLocalStorage(questionId);
+  const questionIndex = questions.value.findIndex(question => question.id === questionId);
   if (questionIndex !== -1) {
-    questions.value = questions.value.filter((_, index) => index !== questionIndex)
+    questions.value = questions.value.filter((_, index) => index !== questionIndex);
   }
-}
+};
 
 const handleInlineKeydown = (event) => {
   if (event.key === 'Enter') {
-    event.preventDefault()
-    saveEditingTitle()
+    event.preventDefault();
+    saveEditingTitle();
   } else if (event.key === 'Escape') {
-    event.preventDefault()
-    cancelEditingTitle()
+    event.preventDefault();
+    cancelEditingTitle();
   }
-}
+};
 
 const handleInlineInput = () => {
   if (autoSaveTimer) {
-    clearTimeout(autoSaveTimer)
+    clearTimeout(autoSaveTimer);
   }
   
   autoSaveTimer = setTimeout(() => {
-    saveEditingTitle()
-  }, AUTO_SAVE_DELAY)
-}
+    saveEditingTitle();
+  }, AUTO_SAVE_DELAY);
+};
 
 const detectActiveQuestion = () => {
-  const currentTime = Date.now()
-  const currentScrollY = window.scrollY
+  const currentTime = Date.now();
+  const currentScrollY = window.scrollY;
   
-  const scrollVelocity = Math.abs(currentScrollY - lastScrollY) / Math.max(currentTime - lastScrollTime, 1)
-  lastScrollY = currentScrollY
-  lastScrollTime = currentTime
+  const scrollVelocity = Math.abs(currentScrollY - lastScrollY) / Math.max(currentTime - lastScrollTime, 1);
+  lastScrollY = currentScrollY;
+  lastScrollTime = currentTime;
   
-  const viewportHeight = window.innerHeight
-  const scrollTop = window.scrollY
-  const viewportCenter = scrollTop + viewportHeight / 2
+  const viewportHeight = window.innerHeight;
+  const scrollTop = window.scrollY;
+  const viewportCenter = scrollTop + viewportHeight / 2;
   
-  let closestIndex = -1
-  let closestDistance = Infinity
+  let closestIndex = -1;
+  let closestDistance = Infinity;
   
   questions.value.forEach((question, index) => {
     if (question.element) {
-      const rect = question.element.getBoundingClientRect()
-      const elementTop = rect.top + scrollTop
-      const elementCenter = elementTop + rect.height / 2
+      const rect = question.element.getBoundingClientRect();
+      const elementTop = rect.top + scrollTop;
+      const elementCenter = elementTop + rect.height / 2;
       
       // 計算元素中心點與視窗中心點的距離
-      const distance = Math.abs(elementCenter - viewportCenter)
+      const distance = Math.abs(elementCenter - viewportCenter);
       // 檢查元素是否在視窗內
-      const isInViewport = rect.top < viewportHeight && rect.bottom > 0
+      const isInViewport = rect.top < viewportHeight && rect.bottom > 0;
       // 快速滾動時放寬檢測範圍
       const isValidCandidate = scrollVelocity > 2 ? 
         (rect.top < viewportHeight * 1.2 && rect.bottom > -viewportHeight * 0.2) : 
-        isInViewport
+        isInViewport;
       
       if (isValidCandidate && distance < closestDistance) {
-        closestDistance = distance
-        closestIndex = index
+        closestDistance = distance;
+        closestIndex = index;
       }
     }
-  })
+  });
   
-  const previousActiveIndex = activeQuestionIndex.value
+  const previousActiveIndex = activeQuestionIndex.value;
   
   if (closestIndex !== -1) {
-    activeQuestionIndex.value = closestIndex
+    activeQuestionIndex.value = closestIndex;
   } else {
     if (questions.value.length > 0 && activeQuestionIndex.value === -1) {
-      activeQuestionIndex.value = questions.value.length - 1
+      activeQuestionIndex.value = questions.value.length - 1;
     }
   }
   
   if (previousActiveIndex !== activeQuestionIndex.value) {
     // Active question changed
   }
-}
+};
 
 const scrollToQuestion = (element) => {
   if (element) {
-    detectActiveQuestion()
+    detectActiveQuestion();
     
     element.scrollIntoView({ 
       behavior: 'smooth', 
       block: 'center' 
-    })
+    });
     
     const scrollCheckInterval = setInterval(() => {
-      detectActiveQuestion()
-    }, 50)
+      detectActiveQuestion();
+    }, 50);
     
     setTimeout(() => {
-      clearInterval(scrollCheckInterval)
-      detectActiveQuestion()
-    }, 1000)
+      clearInterval(scrollCheckInterval);
+      detectActiveQuestion();
+    }, 1000);
     
-    element.style.transition = 'background-color 0.5s ease'
-    element.style.backgroundColor = '#FAF3EC'
+    element.style.transition = 'background-color 0.5s ease';
+    element.style.backgroundColor = '#FAF3EC';
     setTimeout(() => {
-      element.style.backgroundColor = ''
-    }, 2000)
+      element.style.backgroundColor = '';
+    }, 2000);
   }
-}
+};
 
 const extractUserQuestions = () => {
   
-  const foundQuestions = []
+  const foundQuestions = [];
   
-  const currentChatRoomId = getCurrentChatRoomId()
+  const currentChatRoomId = getCurrentChatRoomId();
   
   USER_MESSAGE_SELECTORS.forEach(selector => {
     try {
-      const elements = document.querySelectorAll(selector)
+      const elements = document.querySelectorAll(selector);
       
       elements.forEach((element, _index) => {
-        let questionText = ''
+        let questionText = '';
         
-        const preWrapContainer = element.querySelector('.whitespace-pre-wrap')
+        const preWrapContainer = element.querySelector('.whitespace-pre-wrap');
         if (preWrapContainer && preWrapContainer.textContent.trim()) {
-          questionText = preWrapContainer.textContent.trim()
+          questionText = preWrapContainer.textContent.trim();
         }
         
         if (!questionText) {
-          const bubbleContainer = element.querySelector('.user-message-bubble-color')
+          const bubbleContainer = element.querySelector('.user-message-bubble-color');
           if (bubbleContainer && bubbleContainer.textContent.trim()) {
-            questionText = bubbleContainer.textContent.trim()
+            questionText = bubbleContainer.textContent.trim();
           }
         }
         
         if (!questionText) {
-          const messageContainer = element.querySelector('[data-message-author-role="user"]')
+          const messageContainer = element.querySelector('[data-message-author-role="user"]');
           if (messageContainer) {
-            const textDiv = messageContainer.querySelector('.whitespace-pre-wrap')
+            const textDiv = messageContainer.querySelector('.whitespace-pre-wrap');
             if (textDiv && textDiv.textContent.trim()) {
-              questionText = textDiv.textContent.trim()
+              questionText = textDiv.textContent.trim();
             }
           }
         }
         
         if (!questionText && element.textContent && element.textContent.trim()) {
-          questionText = element.textContent.trim()
-          questionText = questionText.replace(/複製|編輯訊息|你說：/g, '').trim()
+          questionText = element.textContent.trim();
+          questionText = questionText.replace(/複製|編輯訊息|你說：/g, '').trim();
         }
         
         if (!questionText) {
-          const textContainers = element.querySelectorAll('div, p, span')
+          const textContainers = element.querySelectorAll('div, p, span');
           textContainers.forEach(container => {
-            const text = container.textContent?.trim()
+            const text = container.textContent?.trim();
             if (text && text.length > questionText.length && text.length < 1000) {
               if (!text.match(/複製|編輯訊息|你說：|aria-label|data-testid/)) {
-                questionText = text
+                questionText = text;
               }
             }
-          })
+          });
         }
         
         if (questionText && 
             !questionText.includes('ChatGPT') &&
             !questionText.includes('OpenAI')) {
           
-          const questionId = `user-question-${foundQuestions.length}`
-          element.id = questionId
+          const questionId = `user-question-${foundQuestions.length}`;
+          element.id = questionId;
           
           foundQuestions.push({
             text: questionText,
@@ -399,119 +416,119 @@ const extractUserQuestions = () => {
             index: foundQuestions.length,
             chatRoomId: currentChatRoomId,
             timestamp: Date.now()
-          })
+          });
           
         }
-      })
+      });
     } catch (error) {
-      console.error(`Error occurred while processing selector "${selector}":`, error)
+      console.error(`Error occurred while processing selector "${selector}":`, error);
     }
-  })
+  });
   
-  const uniqueQuestions = []
-  const seenTexts = new Set()
+  const uniqueQuestions = [];
+  const seenTexts = new Set();
   
   foundQuestions.forEach(q => {
-    const normalizedText = q.text.toLowerCase().replace(/\s+/g, ' ').trim()
+    const normalizedText = q.text.toLowerCase().replace(/\s+/g, ' ').trim();
     // Skip questions that have been deleted
     if (!seenTexts.has(normalizedText) && !deletedQuestionIds.value.has(q.id)) {
-      seenTexts.add(normalizedText)
-      uniqueQuestions.push(q)
+      seenTexts.add(normalizedText);
+      uniqueQuestions.push(q);
     }
-  })
+  });
   
-  questions.value = uniqueQuestions
+  questions.value = uniqueQuestions;
   
   if (uniqueQuestions.length > 0) {
-    detectActiveQuestion()
+    detectActiveQuestion();
     
     if (activeQuestionIndex.value === -1) {
-      const latestQuestionIndex = uniqueQuestions.length - 1
-      activeQuestionIndex.value = latestQuestionIndex
+      const latestQuestionIndex = uniqueQuestions.length - 1;
+      activeQuestionIndex.value = latestQuestionIndex;
     }
     
     // 自動儲存最新的問題（如果有的話）
     if (uniqueQuestions.length > 0) {
-      const latestQuestion = uniqueQuestions[uniqueQuestions.length - 1]
-      saveCurrentQuestion(latestQuestion)
+      const latestQuestion = uniqueQuestions[uniqueQuestions.length - 1];
+      saveCurrentQuestion(latestQuestion);
     }
   }
-}
+};
 
 onMounted(() => {
-  initTheme()
+  initTheme();
 
-  extractUserQuestions()
+  extractUserQuestions();
   
   setTimeout(() => {
-    setupIntersectionObserver()
-    detectActiveQuestion()
+    setupIntersectionObserver();
+    detectActiveQuestion();
     
-    initRecentChats(extractUserQuestions)
+    initRecentChats(extractUserQuestions);
 
-    const { initLockIcon } = useLockIcon()
+    const { initLockIcon } = useLockIcon();
     initLockIcon((lockButton) => {
-      lockDialogManager.open(lockButton)
-    })
+      lockDialogManager.open(lockButton);
+    });
     
     setTimeout(() => {      
       if (questions.value.length > 0) {
-        const latestIndex = questions.value.length - 1
-        activeQuestionIndex.value = latestIndex
+        const latestIndex = questions.value.length - 1;
+        activeQuestionIndex.value = latestIndex;
       }
-    }, 500)
-  }, 1000)
+    }, 500);
+  }, 1000);
   
   const handleScroll = () => {
-    detectActiveQuestion()
-  }
+    detectActiveQuestion();
+  };
   
-  let intersectionObserver = null
+  let intersectionObserver = null;
   const setupIntersectionObserver = () => {
     if (intersectionObserver) {
-      intersectionObserver.disconnect()
+      intersectionObserver.disconnect();
     }
     
     intersectionObserver = new IntersectionObserver((_entries) => {
-      detectActiveQuestion()
+      detectActiveQuestion();
     }, {
       root: null,
       rootMargin: '0px',
       threshold: [0, 0.1, 0.5, 0.9, 1.0]
-    })
+    });
     
     questions.value.forEach(question => {
       if (question.element) {
-        intersectionObserver.observe(question.element)
+        intersectionObserver.observe(question.element);
       }
-    })
-  }
+    });
+  };
   
-  let scrollTimeout = null
+  let scrollTimeout = null;
   const directScrollHandler = () => {
-    detectActiveQuestion()
+    detectActiveQuestion();
     
     if (scrollTimeout) {
-      clearTimeout(scrollTimeout)
+      clearTimeout(scrollTimeout);
     }
     scrollTimeout = setTimeout(() => {
-      detectActiveQuestion()
-    }, 100)
-  }
+      detectActiveQuestion();
+    }, 100);
+  };
   
-  window.addEventListener('scroll', directScrollHandler, { passive: true })
-  window.addEventListener('resize', handleScroll)
+  window.addEventListener('scroll', directScrollHandler, { passive: true });
+  window.addEventListener('resize', handleScroll);
   
-  const debouncedUpdateIndicators = debounce(() => refreshIndicators(extractUserQuestions), 300)
+  const debouncedUpdateIndicators = debounce(() => refreshIndicators(extractUserQuestions), 300);
   
   observer = new MutationObserver((mutations) => {
-    let shouldUpdateQuestions = false
-    let shouldUpdateIndicators = false
-    let shouldTryLock = false
+    let shouldUpdateQuestions = false;
+    let shouldUpdateIndicators = false;
+    let shouldTryLock = false;
     
     mutations.forEach((mutation) => {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        shouldUpdateQuestions = true
+        shouldUpdateQuestions = true;
         
         // 檢查是否有聊天室相關的變化
         const hasRelevantChanges = Array.from(mutation.addedNodes).some(node => 
@@ -521,61 +538,63 @@ onMounted(() => {
             node.classList?.contains('__menu-item') ||
             node.querySelector?.('h2.__menu-label')
           )
-        )
+        );
         
         if (hasRelevantChanges) {
-          shouldUpdateIndicators = true
+          shouldUpdateIndicators = true;
         }
 
         // 如果側欄或標題發生變化，嘗試掛載鎖頭按鈕
         const hasMenuLabel = Array.from(mutation.addedNodes).some(node => 
           node.nodeType === 1 && (node.matches?.('h2.__menu-label') || node.querySelector?.('h2.__menu-label'))
-        )
-        if (hasMenuLabel) shouldTryLock = true
+        );
+        if (hasMenuLabel) {
+          shouldTryLock = true;
+        }
       }
-    })
+    });
     
     if (shouldUpdateQuestions) {
       setTimeout(() => {
-        extractUserQuestions()
+        extractUserQuestions();
         setTimeout(() => {
-          setupIntersectionObserver()
-          detectActiveQuestion()
-        }, 100)
-      }, 500)
+          setupIntersectionObserver();
+          detectActiveQuestion();
+        }, 100);
+      }, 500);
     }
     
     if (shouldUpdateIndicators) {
-      debouncedUpdateIndicators()
+      debouncedUpdateIndicators();
     }
-  })
+  });
   
   observer.observe(document.body, {
     childList: true,
     subtree: true
-  })
+  });
   
-  scrollObserver = { directScrollHandler, intersectionObserver }
+  scrollObserver = { directScrollHandler, intersectionObserver };
   // Cleanup listeners on unmount
   onBeforeUnmount(() => {
-    window.removeEventListener('storage', storageHandler)
-    window.removeEventListener('chatjump-theme-change', sameTabHandler)
-    teardownSystemListener?.()
-  })
-})
+    window.removeEventListener('storage', storageHandler);
+    window.removeEventListener('chatjump-theme-change', sameTabHandler);
+    teardownSystemListener?.();
+  });
+});
 
 onUnmounted(() => {
   if (observer) {
-    observer.disconnect()
+    observer.disconnect();
   }
   if (scrollObserver) {
-    window.removeEventListener('scroll', scrollObserver.directScrollHandler)
+    window.removeEventListener('scroll', scrollObserver.directScrollHandler);
     if (scrollObserver.intersectionObserver) {
-      scrollObserver.intersectionObserver.disconnect()
+      scrollObserver.intersectionObserver.disconnect();
     }
-    window.removeEventListener('resize', detectActiveQuestion)
+    window.removeEventListener('resize', detectActiveQuestion);
   }
-})
+});
 
-onBeforeUnmount(() => lockDialogManager.destroy())
+onBeforeUnmount(() => lockDialogManager.destroy());
 </script>
